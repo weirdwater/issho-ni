@@ -1,4 +1,4 @@
 
 export interface ViewData {
-  app: 'public' | 'client' | 'dashboard' | 'present'
+  app: 'public' | 'client' | 'dashboard' | 'presenter'
 }
