@@ -4,7 +4,12 @@ import { ViewData } from './app.interface';
 
 @Controller()
 export class AppController {
-  constructor(private readonly appService: AppService) {}
+
+  @Get()
+  @Render('index')
+  root(): ViewData {
+    return { app: 'public' }
+  }
 
   @Get('live')
   @Render('index')
@@ -22,11 +27,5 @@ export class AppController {
   @Render('index')
   dashboard(): ViewData {
     return { app: 'dashboard' }
-  }
-
-  @Get()
-  @Render('index')
-  root(): ViewData {
-    return { app: 'public' }
   }
 }
