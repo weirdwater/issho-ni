@@ -1,5 +1,6 @@
 # compiled output
 /dist
+/static/assets/js
 /node_modules
 
 # Logs
@@ -35,3 +36,5 @@ lerna-debug.log*
 
 # Environment specific
 .env
+
+#
