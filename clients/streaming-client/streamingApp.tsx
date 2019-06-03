@@ -17,10 +17,18 @@ export interface PermissionScreenState {
 export interface ViewfinderScreenState {
   screen: 'viewfinder'
   sessionToken: Some<string>
+  availableDevices: Maybe<MediaDeviceInfo[]>
+  currentDeviceId: Maybe<string>
 }
 
 export type StreamingAppState = EntryScreenState | PermissionScreenState | ViewfinderScreenState
 
+export const initialViewfinderState = (s: PermissionScreenState): ViewfinderScreenState => ({
+  screen: 'viewfinder',
+  sessionToken: s.sessionToken,
+  availableDevices: none(),
+  currentDeviceId: none(),
+})
 export class StreamingApp extends React.Component<{}, StreamingAppState> {
 
   constructor(props: {}) {
@@ -41,10 +49,10 @@ export class StreamingApp extends React.Component<{}, StreamingAppState> {
   render() {
     return <>{
       this.state.screen === 'viewfinder' ?
-        <ViewfinderScreen />
+        <ViewfinderScreen updateState={this.updateState} {...this.state} />
       : this.state.screen === 'permission' ?
         <PermissionScreen updateState={this.updateState} />
-      : <EntryScreen updateState={this.updateState} sessionToken={this.state.sessionToken} />
+      : <EntryScreen updateState={this.updateState} {...this.state} />
     }</>
   }
 
