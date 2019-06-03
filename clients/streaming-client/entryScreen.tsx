@@ -8,13 +8,13 @@ export interface EntryScreenProps {
   sessionToken: Maybe<string>
 }
 
-const updateTokenSession = (us: UpdateState<StreamingAppState>) => (value: string) => value === ''
+const updateSessionToken = (us: UpdateState<StreamingAppState>) => (value: string) => value === ''
   ? us(s => s.screen === 'entry' ? {...s, sessionToken: none() } : s)
   : us(s => s.screen === 'entry' ? {...s, sessionToken: some(value) } : s)
 
 export const EntryScreen = (props: EntryScreenProps) => (<main>
   <h1>Join the chorus</h1>
   <input type='text' value={isSome(props.sessionToken) ? props.sessionToken.v : ''}
-    onChange={e => updateTokenSession(props.updateState)(e.target.value)} />
+    onChange={e => updateSessionToken(props.updateState)(e.target.value)} />
   <button>Join</button>
 </main>)
