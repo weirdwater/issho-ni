@@ -2,12 +2,24 @@ import * as React from 'react'
 import { EntryScreen } from './entryScreen'
 import { PermissionScreen } from './permissionScreen'
 import { ViewfinderScreen } from './viewfinderScreen'
-import { Maybe, none } from '../shared/fun';
+import { Maybe, none, Some, Action } from '../shared/fun';
 
-interface StreamingAppState {
-  screen: 'entry' | 'permission' | 'viewfinder',
+export interface EntryScreenState {
+  screen: 'entry',
   sessionToken: Maybe<string>
 }
+
+export interface PermissionScreenState {
+  screen: 'permission',
+  sessionToken: Some<string>
+}
+
+export interface ViewfinderScreenState {
+  screen: 'viewfinder'
+  sessionToken: Some<string>
+}
+
+export type StreamingAppState = EntryScreenState | PermissionScreenState | ViewfinderScreenState
 
 export class StreamingApp extends React.Component<{}, StreamingAppState> {
 
@@ -18,6 +30,12 @@ export class StreamingApp extends React.Component<{}, StreamingAppState> {
       screen: 'entry',
       sessionToken: none(),
     }
+
+    this.updateState = this.updateState.bind(this)
+  }
+
+  updateState(a: Action<StreamingAppState>, callback?: () => void) {
+    this.setState(s => a(s), callback)
   }
 
   render() {
@@ -26,7 +44,7 @@ export class StreamingApp extends React.Component<{}, StreamingAppState> {
         <ViewfinderScreen />
       : this.state.screen === 'permission' ?
         <PermissionScreen />
-      : <EntryScreen />
+      : <EntryScreen updateState={this.updateState} sessionToken={this.state.sessionToken} />
     }</>
   }
 
