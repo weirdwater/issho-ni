@@ -17,7 +17,14 @@ export interface ViewfinderScreenProps {
   currentDeviceId: Maybe<string>
 }
 
+const DeviceOption = (props: { device: MediaDeviceInfo}) => (
+  <option value={props.device.deviceId}>
+    { props.device.label || 'unlabeled device' }
+  </option>
+)
+
 export class ViewfinderScreen extends React.Component<ViewfinderScreenProps, {}> {
+  private video = React.createRef<HTMLVideoElement>()
 
   componentDidMount() {
     navigator.mediaDevices.enumerateDevices()
@@ -28,6 +35,21 @@ export class ViewfinderScreen extends React.Component<ViewfinderScreenProps, {}>
           availableDevices: some(ds),
           currentDeviceId: ds.length ? some(ds[0].deviceId) : none(),
         } : s)
+      })
+  }
+
+  componentDidUpdate() {
+    if (isNone(this.props.currentDeviceId)) {
+      return
+    }
+
+    navigator.mediaDevices.getUserMedia(constraints(this.props.currentDeviceId.v))
+      .then(stream => {
+        if (this.video.current) {
+          const video = this.video.current
+          video.srcObject = stream
+          video.onloadedmetadata = () => video.play()
+        }
       })
   }
 
@@ -44,10 +66,9 @@ export class ViewfinderScreen extends React.Component<ViewfinderScreenProps, {}>
             e.persist()
             this.props.updateState(s => s.screen === 'viewfinder' ? {...s, currentDeviceId: some(e.target.value)} : s)
           } } >
-          { this.props.availableDevices.v.map((d, i) => <option key={i} value={d.deviceId}>
-              {d.label || 'unlabeled device'}
-            </option>) }
+          { this.props.availableDevices.v.map((d, i) => <DeviceOption key={i} device={d} />) }
         </select>
+        <video ref={this.video} ></video>
       </section>
     )
   }
