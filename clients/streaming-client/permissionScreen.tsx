@@ -2,6 +2,7 @@ import * as React from 'react'
 import { StateUpdater } from '../shared/types';
 import { StreamingAppState, initialViewfinderState } from './streamingApp';
 import { PermissionState } from './types';
+import { Loading } from './loading';
 
 export interface PermissionScreenProps {
   updateState: StateUpdater<StreamingAppState>
@@ -36,16 +37,44 @@ export class PermissionScreen extends React.Component<PermissionScreenProps, {}>
               this.updatePermissionState('unsupported')
           }
         })
+        .catch((e: any) => {
+          // tslint:disable-next-line:no-console
+          console.error(e)
+          this.updatePermissionState('unsupported')
+        })
     } else {
       this.updatePermissionState('unsupported')
     }
   }
 
+  componentDidUpdate() {
+    if (this.props.permission === 'granted') {
+      this.props.updateState(s => s.screen === 'permission' ? initialViewfinderState(s) : s)
+    }
+  }
+
   render() {
+    if (this.props.permission === 'loading') {
+      return <Loading />
+    }
+
+    if (this.props.permission === 'denied') {
+      return (<section>
+        <h1>Permissions</h1>
+        <p>For Issho Ni to work we need access to your camera.</p>
+        <p>You have set your browser's permissions to deny access to the camera.
+          If you wish to continue, grant Issho Ni access to your camera and reload this page.</p>
+      </section>)
+    }
+
     return (<section>
       <h1>Permissions</h1>
-      <p>To join in on the fun we need your permission to access your camera.</p>
-      <p>After clicking continue you will be prompted to give permission, select allow to continue.</p>
+      <p>For Issho Ni to work we need access to your camera.</p>
+      <p>You may get a prompt on the next screen, choose "allow" to continue using Issho Ni.</p>
+      { this.props.permission === 'unsupported' && <p>We were unable to detect
+        your camera permissions. If you do not get a prompt and the camera does
+        not turn on, please grant Issho Ni access through your browser's settings.</p>
+      }
       <button onClick={() => this.props.updateState(s => s.screen === 'permission' ? initialViewfinderState(s) : s)} >Continue</button>
     </section>)
   }
