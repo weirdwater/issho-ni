@@ -43,7 +43,7 @@ export class StreamingApp extends React.Component<{}, StreamingAppState> {
       this.state.screen === 'viewfinder' ?
         <ViewfinderScreen />
       : this.state.screen === 'permission' ?
-        <PermissionScreen />
+        <PermissionScreen updateState={this.updateState} />
       : <EntryScreen updateState={this.updateState} sessionToken={this.state.sessionToken} />
     }</>
   }
