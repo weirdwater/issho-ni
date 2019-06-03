@@ -15,7 +15,7 @@ const updateSessionToken = (us: StateUpdater<StreamingAppState>) => (value: stri
 const canSubmit = (token: Maybe<string>): token is Some<string> => isSome(token)
 
 const submit = (us: StateUpdater<StreamingAppState>) => us(s => canSubmit(s.sessionToken)
-  ? ({...s, screen: 'permission', sessionToken: s.sessionToken}) : s )
+  ? ({...s, screen: 'permission', sessionToken: s.sessionToken, permission: 'loading'}) : s )
 
 export const EntryScreen = (props: EntryScreenProps) => (<section>
   <h1>Join the chorus</h1>
