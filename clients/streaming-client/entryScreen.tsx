@@ -14,8 +14,15 @@ const updateSessionToken = (us: StateUpdater<StreamingAppState>) => (value: stri
 
 const canSubmit = (token: Maybe<string>): token is Some<string> => isSome(token)
 
-const submit = (us: StateUpdater<StreamingAppState>) => us(s => canSubmit(s.sessionToken)
-  ? ({...s, screen: 'permission', sessionToken: s.sessionToken, permission: 'loading'}) : s )
+const submit = (us: StateUpdater<StreamingAppState>) => us(s => {
+  if (isNone(s.credentials)) {
+    alert('The client has not been registered with the server. Please reload and try again.')
+    return s
+  }
+  return canSubmit(s.sessionToken)
+    ? ({...s, screen: 'permission', sessionToken: s.sessionToken, credentials: s.credentials, permission: 'loading'})
+    : s
+})
 
 export const EntryScreen = (props: EntryScreenProps) => (<section>
   <h1>Join the chorus</h1>
