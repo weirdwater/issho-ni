@@ -1,5 +1,5 @@
 import * as React from 'react'
 import * as ReactDOM from 'react-dom'
-import { TestMsg } from '../shared/test'
+import { PresenterApp } from './presenterApp';
 
-ReactDOM.render(<TestMsg message='Presenter' />, document.getElementById('react-app'))
+ReactDOM.render(<PresenterApp />, document.getElementById('react-app'))

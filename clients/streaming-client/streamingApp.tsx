@@ -3,8 +3,9 @@ import { EntryScreen } from './entryScreen'
 import { PermissionScreen } from './permissionScreen'
 import { ViewfinderScreen } from './viewfinderScreen'
 import { Maybe, none, Some, Action, isSome, some } from '../shared/fun';
-import { PermissionState, ClientCredentials } from './types';
-import { loadCredentials, registerClient } from './clientApi';
+import { PermissionState } from './types';
+import { sourceClient } from '../shared/clientApi';
+import { ClientCredentials } from '../shared/types';
 
 export interface EntryScreenState {
   screen: 'entry',
@@ -55,11 +56,11 @@ export class StreamingApp extends React.Component<{}, StreamingAppState> {
   }
 
   componentDidMount() {
-    const credentials = loadCredentials()
+    const credentials = sourceClient.loadCredentials()
     if (isSome(credentials)) {
       this.setState(s => ({...s, credentials}))
     } else {
-      registerClient()
+      sourceClient.register()
         .then(c => this.setState(s => ({...s, credentials: some(c)})))
         // tslint:disable-next-line:no-console
         .catch(console.error)
