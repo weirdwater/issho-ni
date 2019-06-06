@@ -1,45 +1,48 @@
 
-interface Client {
+export type ClientType = 'source' | 'presenter'
+
+// Concept Types
+interface ConceptClient {
   id: string
   ipAddresses: string[]
   key: string
-  streams: Stream[]
+  streams: ConceptStream[]
 }
 
-interface Stream {
+interface ConceptStream {
   id: string
-  client: Client
-  session: Session
+  client: ConceptClient
+  session: ConceptSession
   link: string
 }
 
-interface Session {
+interface ConceptSession {
   id: string
   token: string
   name: string
   connectionLimit: number
-  streams: Stream[]
-  songs: Song[]
-  songStatus: SongStatus
+  streams: ConceptStream[]
+  songs: ConceptSong[]
+  songStatus: ConceptSongStatus
 }
 
-interface User {
+interface ConceptUser {
   id: string
   email: string
   passwordHash: string
-  sessions: Session[]
+  sessions: ConceptSession[]
   name: string
   emailConfirmed: boolean
   active: boolean
 }
 
-interface Song {
+interface ConceptSong {
   title: string
   artist: string
   lyrics: string[]
 }
 
-interface SongStatus {
+interface ConceptSongStatus {
   song: number
   lyric: number
 }
