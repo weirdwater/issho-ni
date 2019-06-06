@@ -19,6 +19,12 @@ export class ConfigService {
   private validateInput(envConfig: EnvConfig): EnvConfig {
     const envVarsSchema: Joi.ObjectSchema = Joi.object({
       // See https://docs.nestjs.com/techniques/configuration to add configuration options.
+      PG_USER: Joi.string().default('postgres'),
+      PG_PASSWORD: Joi.string().required(),
+      PG_DATABASE: Joi.string().required(),
+      PG_HOST: Joi.string().default('localhost'),
+      PG_PORT: Joi.number().default(5432),
+      ORM_SYNC: Joi.bool().default(false),
     });
 
     const { error, value: validatedEnvConfig } = Joi.validate(
@@ -29,6 +35,30 @@ export class ConfigService {
       throw new Error(`Config validation error: ${error.message}`);
     }
     return validatedEnvConfig;
+  }
+
+  get postgresUser(): string {
+    return this.envConfig.PG_USER
+  }
+
+  get postgresPassword(): string {
+    return this.envConfig.PG_PASSWORD
+  }
+
+  get postgresDatabase(): string {
+    return this.envConfig.PG_DATABASE
+  }
+
+  get postgresHost(): string {
+    return this.envConfig.PG_HOST
+  }
+
+  get postgresPort(): number {
+    return Number(this.envConfig.PG_PORT)
+  }
+
+  get typeOrmSync(): boolean {
+    return Boolean(this.envConfig.ORM_SYNC)
   }
 
 }

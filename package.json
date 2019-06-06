@@ -24,15 +24,18 @@
     "@nestjs/common": "^6.0.0",
     "@nestjs/core": "^6.0.0",
     "@nestjs/platform-express": "^6.0.0",
+    "@nestjs/typeorm": "^6.1.2",
     "dotenv": "^8.0.0",
     "hbs": "^4.0.4",
     "joi": "^14.3.1",
     "js-cookie": "^2.2.0",
+    "pg": "^7.11.0",
     "react": "^16.8.6",
     "react-dom": "^16.8.6",
     "reflect-metadata": "^0.1.12",
     "rimraf": "^2.6.2",
-    "rxjs": "^6.3.3"
+    "rxjs": "^6.3.3",
+    "typeorm": "^0.2.18"
   },
   "devDependencies": {
     "@nestjs/cli": "^6.5.0",
