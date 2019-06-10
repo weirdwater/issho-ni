@@ -15,12 +15,22 @@ export class ClientService {
     return this.clientRepository.find()
   }
 
-  register(client: Client): Promise<Client> {
+  register(client: Client): Promise<boolean> {
     return new Promise((resolve, reject) => {
-      this.clientRepository.save(client)
-        .then(resolve)
-        .catch(reject)
+      this.clientRepository.insert(client)
+        .then(() => resolve(true))
+        .catch(e => {
+          if (e.name === 'QueryFailedError' && e.constraint && (e.constraint as string).substr(0, 2) === 'PK') {
+            // TODO: use nestjs' Exception filter workflow
+            return reject(`Client with uuid ${client.id} already exists.`)
+          }
+          reject(e)
+         })
     })
+  }
+
+  findOne(id: string): Promise<Client> {
+    return this.clientRepository.findOne(id)
   }
 
 }

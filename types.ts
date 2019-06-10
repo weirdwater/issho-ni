@@ -1,5 +1,7 @@
 
-export type ClientType = 'source' | 'presenter'
+export const clientTypes = ['source', 'presenter'] as const
+
+export type ClientType = typeof clientTypes[number]
 
 // Concept Types
 interface ConceptClient {
