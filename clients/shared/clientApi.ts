@@ -1,5 +1,6 @@
 import { ClientCredentials, ClientType } from './types'
 import { none, Maybe, some } from './fun';
+import { v4 as uuid } from 'uuid'
 import * as Cookie from 'js-cookie'
 
 const ClientApi = (kind: ClientType) => {
@@ -24,10 +25,21 @@ const ClientApi = (kind: ClientType) => {
     },
     register: (): Promise<ClientCredentials> => new Promise(
       (resolve, reject) => {
-        const testC = { id: 'test', key: 'test1234', kind }
-        saveCredentials(testC)
-        // reject('Error while trying to register the client: The server could not be reached.')
-        resolve(testC)
+        const clientRequest = { id: uuid(), kind }
+
+        fetch('/api/client/register', {
+          body: JSON.stringify(clientRequest),
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        })
+          .then(res => res.json())
+          .then((c: ClientCredentials) => {
+              saveCredentials(c)
+              resolve(c)
+          })
+          .catch(reject)
       },
     ),
   }
