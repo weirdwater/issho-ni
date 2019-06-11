@@ -1,15 +1,13 @@
 import { Client } from '../client/client.entity'
 import { User } from '../user/user.entity'
-import { ManyToOne, PrimaryGeneratedColumn, Column, ManyToMany, JoinTable, Entity } from 'typeorm';
+import { ManyToOne, PrimaryGeneratedColumn, Column, ManyToMany, JoinTable, Entity, CreateDateColumn, OneToOne, JoinColumn } from 'typeorm';
+import { ActiveSession } from './activeSession.entity';
 
 @Entity()
 export class Session {
 
   @PrimaryGeneratedColumn()
   id: number
-
-  @Column()
-  token: string
 
   @Column()
   key: string
@@ -24,4 +22,13 @@ export class Session {
   @JoinTable()
   clients: Client[]
 
+  @OneToOne(type => Client)
+  @JoinColumn()
+  presenter: Client
+
+  @OneToOne(type => ActiveSession, activeSession => activeSession.session)
+  activeSession: ActiveSession
+
+  @CreateDateColumn()
+  created: Date
 }
