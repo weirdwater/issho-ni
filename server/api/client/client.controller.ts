@@ -27,7 +27,7 @@ export class ClientController {
     client.hashedKey = hashedKey
 
     return this.clientService.register(client)
-      .then(() => ({ id: client.id, kind: client.kind, key }))
+      .then(id => ({ kind: client.kind, id, key }))
   }
 
   @Post('/authenticate')

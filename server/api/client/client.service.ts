@@ -2,6 +2,8 @@ import { Injectable } from '@nestjs/common';
 import { Client } from './client.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+import { ClientIdExistsException } from 'server/exceptions/clientIdExists.exception';
+import { string } from 'joi';
 
 @Injectable()
 export class ClientService {
@@ -15,18 +17,16 @@ export class ClientService {
     return this.clientRepository.find()
   }
 
-  register(client: Client): Promise<boolean> {
-    return new Promise((resolve, reject) => {
-      this.clientRepository.insert(client)
-        .then(() => resolve(true))
-        .catch(e => {
-          if (e.name === 'QueryFailedError' && e.constraint && (e.constraint as string).substr(0, 2) === 'PK') {
-            // TODO: use nestjs' Exception filter workflow
-            return reject(`Client with uuid ${client.id} already exists.`)
-          }
-          reject(e)
-         })
-    })
+  async register(client: Client): Promise<string> {
+    try {
+      const result = await this.clientRepository.insert(client)
+      return result.identifiers.shift().id
+    } catch (e) {
+      if (e.name === 'QueryFailedError' && e.constraint && (e.constraint as string).substr(0, 2) === 'PK') {
+        throw new ClientIdExistsException(client.id)
+      }
+      throw e
+    }
   }
 
   findOne(id: string): Promise<Client> {
