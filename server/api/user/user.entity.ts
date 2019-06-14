@@ -7,22 +7,19 @@ export class User {
   @PrimaryGeneratedColumn()
   id: number
 
-  @Column()
+  @Column({ unique: true })
   email: string
 
   @Column()
   encryptedPassword: string
 
   @Column()
-  salt: string
-
-  @Column()
   name: string
 
-  @Column()
+  @Column({ default: false })
   emailConfirmed: boolean
 
-  @Column()
+  @Column({ default: false })
   active: boolean
 
   @OneToMany(type => Session, session => session.owner)

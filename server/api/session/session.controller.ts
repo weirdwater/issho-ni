@@ -1,9 +1,10 @@
-import { Controller, Get, Param, Post, Body } from '@nestjs/common';
+import { Controller, Get, Param, Post, Body, UseInterceptors } from '@nestjs/common';
 import { SessionService } from './session.service';
 import { Session } from './session.entity';
 import { CreateSessionDTO } from './session.dto';
 import { User } from '../user/user.entity';
 import * as crypto from 'crypto'
+import { NotFoundInterceptor } from '../not-found.interceptor';
 
 @Controller('api/session')
 export class SessionController {
@@ -16,6 +17,7 @@ export class SessionController {
   }
 
   @Get(':id')
+  @UseInterceptors(NotFoundInterceptor)
   getOne(@Param('id') id: number): Promise<Session> {
     return this.sessionService.findOne(id)
   }
