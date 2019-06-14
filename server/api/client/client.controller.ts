@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, UsePipes, ValidationPipe } from '@nestjs/common';
+import { Controller, Get, Post, Body, UsePipes, ValidationPipe, UseInterceptors, ClassSerializerInterceptor } from '@nestjs/common';
 import { Client } from './client.entity';
 import { ClientService } from './client.service';
 import { RegisterClientDTO, RegisterClientResponseDTO, AuthenticateClientDTO } from './client.dto';
@@ -6,6 +6,7 @@ import * as crypto from 'crypto'
 import * as bcrypt from 'bcrypt'
 
 @Controller('api/client')
+@UseInterceptors(ClassSerializerInterceptor)
 export class ClientController {
 
   constructor(private readonly clientService: ClientService) {}

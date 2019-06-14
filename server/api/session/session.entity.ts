@@ -2,6 +2,7 @@ import { Client } from '../client/client.entity'
 import { User } from '../user/user.entity'
 import { ManyToOne, PrimaryGeneratedColumn, Column, ManyToMany, JoinTable, Entity, CreateDateColumn, OneToOne, JoinColumn } from 'typeorm';
 import { ActiveSession } from './activeSession.entity';
+import { Exclude } from 'class-transformer';
 
 @Entity()
 export class Session {
@@ -9,6 +10,7 @@ export class Session {
   @PrimaryGeneratedColumn()
   id: number
 
+  @Exclude()
   @Column()
   key: string
 

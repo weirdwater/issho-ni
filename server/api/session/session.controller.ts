@@ -1,4 +1,4 @@
-import { Controller, Get, Param, Post, Body, UseInterceptors } from '@nestjs/common';
+import { Controller, Get, Param, Post, Body, UseInterceptors, ClassSerializerInterceptor } from '@nestjs/common';
 import { SessionService } from './session.service';
 import { Session } from './session.entity';
 import { CreateSessionDTO } from './session.dto';
@@ -7,6 +7,7 @@ import * as crypto from 'crypto'
 import { NotFoundInterceptor } from '../not-found.interceptor';
 
 @Controller('api/session')
+@UseInterceptors(ClassSerializerInterceptor)
 export class SessionController {
 
   constructor(private readonly sessionService: SessionService) {}

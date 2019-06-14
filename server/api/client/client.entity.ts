@@ -1,6 +1,7 @@
 import { PrimaryGeneratedColumn, Column, ManyToMany, Entity, CreateDateColumn } from 'typeorm'
 import { Session } from '../session/session.entity'
 import { ClientType, clientTypes } from 'types';
+import { Exclude } from 'class-transformer';
 
 @Entity()
 export class Client {
@@ -8,6 +9,7 @@ export class Client {
   @PrimaryGeneratedColumn('uuid')
   id: string
 
+  @Exclude()
   @Column()
   hashedKey: string
 

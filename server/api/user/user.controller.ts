@@ -1,4 +1,4 @@
-import { Controller, Get, Param, Post, Body, UseInterceptors } from '@nestjs/common'
+import { Controller, Get, Param, Post, Body, UseInterceptors, ClassSerializerInterceptor } from '@nestjs/common'
 import { User } from './user.entity'
 import { UserService } from './user.service'
 import { CreateUserDTO } from './user.dto'
@@ -6,6 +6,7 @@ import * as bcrypt from 'bcrypt'
 import { NotFoundInterceptor } from '../not-found.interceptor';
 
 @Controller('api/user')
+@UseInterceptors(ClassSerializerInterceptor)
 export class UserController {
 
   constructor(private readonly userService: UserService) {}

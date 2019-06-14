@@ -1,5 +1,6 @@
 import { Session } from '../session/session.entity'
 import { PrimaryGeneratedColumn, Column, OneToMany, Entity } from 'typeorm'
+import { Exclude } from 'class-transformer'
 
 @Entity()
 export class User {
@@ -10,15 +11,18 @@ export class User {
   @Column({ unique: true })
   email: string
 
+  @Exclude()
   @Column()
   encryptedPassword: string
 
   @Column()
   name: string
 
+  @Exclude()
   @Column({ default: false })
   emailConfirmed: boolean
 
+  @Exclude()
   @Column({ default: false })
   active: boolean
 
