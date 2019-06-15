@@ -14,7 +14,7 @@ const dbConfigFactory = async (configService: ConfigService): Promise<Connection
   username: configService.postgresUser,
   password: configService.postgresPassword,
   database: configService.postgresDatabase,
-  entities: [ __dirname + '/**/*.entity.ts' ],
+  entities: [ __dirname + '/**/*.entity.ts', __dirname + '/**/*.entity.js' ],
   synchronize: configService.typeOrmSync,
 })
 

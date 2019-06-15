@@ -2,7 +2,7 @@ import { Injectable, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { User } from './user.entity';
 import { Repository } from 'typeorm';
-import { UserWithEmailExistsException } from 'server/exceptions/userWithEmailExists.exception';
+import { UserWithEmailExistsException } from '../../exceptions/userWithEmailExists.exception';
 
 @Injectable()
 export class UserService {

@@ -2,8 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { Client } from './client.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { ClientIdExistsException } from 'server/exceptions/clientIdExists.exception';
-import { string } from 'joi';
+import { ClientIdExistsException } from '../../exceptions/clientIdExists.exception';
 
 @Injectable()
 export class ClientService {
