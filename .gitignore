@@ -36,5 +36,6 @@ lerna-debug.log*
 
 # Environment specific
 .env
+docker.env
 
 #
