@@ -15,10 +15,20 @@ export class PermissionScreen extends React.Component<PermissionScreenProps, {}>
     super(props)
 
     this.updatePermissionState = this.updatePermissionState.bind(this)
+    this.attemptVideoStream = this.attemptVideoStream.bind(this)
   }
 
   updatePermissionState(p: PermissionState) {
     this.props.updateState(s => s.screen === 'permission' ? { ...s, permission: p } : s)
+  }
+
+  attemptVideoStream() {
+    navigator.mediaDevices.getUserMedia({ video: true, audio: false })
+        .then(stream => {
+          this.updatePermissionState('granted')
+          stream.getTracks().forEach(t => t.stop())
+        })
+        .catch(e => this.updatePermissionState('denied'))
   }
 
   componentDidMount() {
@@ -75,7 +85,7 @@ export class PermissionScreen extends React.Component<PermissionScreenProps, {}>
         your camera permissions. If you do not get a prompt and the camera does
         not turn on, please grant Issho Ni access through your browser's settings.</p>
       }
-      <button onClick={() => this.props.updateState(s => s.screen === 'permission' ? initialViewfinderState(s) : s)} >Continue</button>
+      <button onClick={this.attemptVideoStream} >Continue</button>
     </section>)
   }
 

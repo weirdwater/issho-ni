@@ -68,7 +68,7 @@ export class ViewfinderScreen extends React.Component<ViewfinderScreenProps, {}>
           } } >
           { this.props.availableDevices.v.map((d, i) => <DeviceOption key={i} device={d} />) }
         </select>
-        <video ref={this.video} ></video>
+        <video ref={this.video} playsInline={true} ></video>
       </section>
     )
   }
