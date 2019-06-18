@@ -1,3 +1,5 @@
+const webpack = require('webpack')
+const WebpackShellPlugin = require('webpack-shell-plugin')
 const path = require('path')
 
 module.exports = {
@@ -35,7 +37,7 @@ module.exports = {
           {
             loader: 'css-loader',
             options: {
-              sourceMaps: true,
+              sourceMap: true,
               modules: true,
               localIdentName: '[folder]-[name]__[local]--[hash:base64:5]'
             }
@@ -47,5 +49,14 @@ module.exports = {
         ]
       }
     ]
-  }
+  },
+  plugins: [
+    new WebpackShellPlugin({
+      onBuildStart: ['yarn build:style-typings'],
+      dev: false
+    }),
+    new webpack.WatchIgnorePlugin([
+      /scss\.d\.ts$/
+    ])
+  ]
 }

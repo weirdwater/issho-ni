@@ -3,6 +3,7 @@ import { StateUpdater } from '../shared/types';
 import { StreamingAppState } from './streamingApp';
 import { Maybe, isSome, isNone, some, none } from '../shared/fun';
 import { Loading } from './loading';
+import * as styles from './viewfinderScreen.scss'
 
 const constraints = (deviceId: string): MediaStreamConstraints => ({
   audio: false,
@@ -60,15 +61,16 @@ export class ViewfinderScreen extends React.Component<ViewfinderScreenProps, {}>
     }
 
     return (
-      <section>
+      <section className={styles.container}>
         <select value={isSome(this.props.currentDeviceId) ? this.props.currentDeviceId.v : undefined}
+          className={styles.cameraSelector}
           onChange={e => {
             e.persist()
             this.props.updateState(s => s.screen === 'viewfinder' ? {...s, currentDeviceId: some(e.target.value)} : s)
           } } >
           { this.props.availableDevices.v.map((d, i) => <DeviceOption key={i} device={d} />) }
         </select>
-        <video ref={this.video} playsInline={true} ></video>
+        <video className={styles.video} ref={this.video} playsInline={true} ></video>
       </section>
     )
   }
