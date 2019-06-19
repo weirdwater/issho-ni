@@ -6,7 +6,9 @@ import { Maybe, none, Some, Action, isSome, some } from '../shared/fun';
 import { PermissionState } from './types';
 import { sourceClient } from '../shared/clientApi';
 import { ClientCredentials } from '../shared/types';
+import * as styles from './streamingApp.scss'
 
+const appStyle = styles.app;
 export interface EntryScreenState {
   screen: 'entry',
   sessionToken: Maybe<string>
@@ -26,6 +28,7 @@ export interface ViewfinderScreenState {
   credentials: Some<ClientCredentials>
   availableDevices: Maybe<MediaDeviceInfo[]>
   currentDeviceId: Maybe<string>
+  stream: Maybe<MediaStream>
 }
 
 export type StreamingAppState = EntryScreenState | PermissionScreenState | ViewfinderScreenState
@@ -36,6 +39,7 @@ export const initialViewfinderState = (s: PermissionScreenState): ViewfinderScre
   credentials: s.credentials,
   availableDevices: none(),
   currentDeviceId: none(),
+  stream: none(),
 })
 export class StreamingApp extends React.Component<{}, StreamingAppState> {
 
@@ -68,13 +72,13 @@ export class StreamingApp extends React.Component<{}, StreamingAppState> {
   }
 
   render() {
-    return <>{
+    return <div className={styles.app} >{
       this.state.screen === 'viewfinder' ?
         <ViewfinderScreen updateState={this.updateState} {...this.state} />
       : this.state.screen === 'permission' ?
         <PermissionScreen updateState={this.updateState} {...this.state} />
       : <EntryScreen updateState={this.updateState} {...this.state} />
-    }</>
+    }</div>
   }
 
 }

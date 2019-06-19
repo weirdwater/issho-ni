@@ -2,6 +2,9 @@ import * as React from 'react'
 import { StateUpdater } from '../shared/types';
 import { StreamingAppState } from './streamingApp';
 import { isSome, none, some, Maybe, isNone, Some } from '../shared/fun';
+import { Title, Subtitle } from './components/title';
+import * as styles from './entryScreen.scss'
+import { Page } from './components/page';
 
 export interface EntryScreenProps {
   updateState: StateUpdater<StreamingAppState>
@@ -24,9 +27,10 @@ const submit = (us: StateUpdater<StreamingAppState>) => us(s => {
     : s
 })
 
-export const EntryScreen = (props: EntryScreenProps) => (<section>
-  <h1>Join the chorus</h1>
+export const EntryScreen = (props: EntryScreenProps) => (<Page>
+  <Title>一緒にカラオケ</Title>
+  <Subtitle>Karaoke Together</Subtitle>
   <input type='text' value={isSome(props.sessionToken) ? props.sessionToken.v : ''}
     onChange={e => updateSessionToken(props.updateState)(e.target.value)} />
   <button disabled={!canSubmit(props.sessionToken)} onClick={() => submit(props.updateState)} >Join</button>
-</section>)
+</Page>)
