@@ -26,4 +26,9 @@ COPY --from=build /usr/src/app/node_modules/ ./node_modules/
 COPY --from=build /usr/src/app/dist/         ./dist/
 COPY --from=build /usr/src/app/static/       ./dist/static
 
+ARG BUILD_NUMBER="none"
+ARG GIT_BRANCH="none"
+ARG GIT_COMMIT="none"
+RUN echo "{ \"build\":\"${BUILD_NUMBER}\", \"branch\":\"${GIT_BRANCH}\", \"commit\":\"${GIT_COMMIT}\" }" > ./dist/static/build.json
+
 CMD yarn start:prod
