@@ -1,10 +1,10 @@
 import * as React from 'react'
-import { StateUpdater } from '../shared/types';
-import { StreamingAppState } from './streamingApp';
-import { Maybe, isSome, isNone, some, none } from '../shared/fun';
+import { StateUpdater } from '../../shared/types';
+import { StreamingAppState } from '../streamingApp';
+import { Maybe, isSome, isNone, some, none } from '../../shared/fun';
 import { LoadingPage } from './loadingPage';
 import * as styles from './viewfinderScreen.scss'
-import { Page } from './components/page';
+import { Page } from '../components/page';
 
 const constraints = (deviceId: string): MediaStreamConstraints => ({
   audio: false,

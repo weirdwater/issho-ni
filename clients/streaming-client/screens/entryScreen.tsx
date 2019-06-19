@@ -1,12 +1,12 @@
 import * as React from 'react'
-import { StateUpdater } from '../shared/types';
-import { StreamingAppState } from './streamingApp';
-import { isSome, none, some, Maybe, isNone, Some } from '../shared/fun';
-import { Title, Subtitle } from './components/title';
+import { StateUpdater } from '../../shared/types';
+import { StreamingAppState } from '../streamingApp';
+import { isSome, none, some, Maybe, isNone, Some } from '../../shared/fun';
+import { Title, Subtitle } from '../components/title';
 import * as styles from './entryScreen.scss'
-import { Page } from './components/page';
-import { Button } from './components/button';
-import { TokenInput } from './components/tokenInput';
+import { Page } from '../components/page';
+import { Button } from '../components/button';
+import { TokenInput } from '../components/tokenInput';
 
 export interface EntryScreenProps {
   updateState: StateUpdater<StreamingAppState>

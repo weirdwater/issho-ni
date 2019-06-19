@@ -1,11 +1,11 @@
 import * as React from 'react'
-import { StateUpdater } from '../shared/types';
-import { StreamingAppState, initialViewfinderState } from './streamingApp';
-import { PermissionState } from './types';
+import { StateUpdater } from '../../shared/types';
+import { StreamingAppState, initialViewfinderState } from '../streamingApp';
+import { PermissionState } from '../types';
 import { LoadingPage } from './loadingPage';
-import { Page } from './components/page';
-import { Heading } from './components/heading';
-import { Button } from './components/button';
+import { Page } from '../components/page';
+import { Heading } from '../components/heading';
+import { Button } from '../components/button';
 
 export interface PermissionScreenProps {
   updateState: StateUpdater<StreamingAppState>
