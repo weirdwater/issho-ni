@@ -6,14 +6,12 @@ import { LoadingPage } from './loadingPage';
 import * as styles from './viewfinderScreen.scss'
 import { Page } from './components/page';
 
-const constraints = (deviceId: string): MediaStreamConstraints => {
-  console.log('new stream received')
-  return ({
+const constraints = (deviceId: string): MediaStreamConstraints => ({
   audio: false,
   video: {
     deviceId,
   },
-})}
+})
 
 export interface ViewfinderScreenProps {
   updateState: StateUpdater<StreamingAppState>
@@ -47,7 +45,6 @@ export class ViewfinderScreen extends React.Component<ViewfinderScreenProps, {}>
     const video = this.video.current
 
     if (video && isSome(this.props.stream) && isNone(prevProps.stream)) {
-      console.log('setting source')
       video.srcObject = this.props.stream.v
       video.onloadedmetadata = () => video.play()
     }
@@ -62,9 +59,7 @@ export class ViewfinderScreen extends React.Component<ViewfinderScreenProps, {}>
         this.props.updateState(s => s.screen === 'viewfinder' ? { ...s, stream: none() } : s)
       }
       navigator.mediaDevices.getUserMedia(constraints(this.props.currentDeviceId.v))
-        .then(stream => this.props.updateState(s => {
-          console.log('new stream received')
-          return s.screen === 'viewfinder' ? { ...s, stream: some(stream) } : s }))
+        .then(stream => this.props.updateState(s => s.screen === 'viewfinder' ? { ...s, stream: some(stream) } : s))
     }
   }
 
