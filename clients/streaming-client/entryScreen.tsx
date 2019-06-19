@@ -5,6 +5,8 @@ import { isSome, none, some, Maybe, isNone, Some } from '../shared/fun';
 import { Title, Subtitle } from './components/title';
 import * as styles from './entryScreen.scss'
 import { Page } from './components/page';
+import { Button } from './components/button';
+import { TokenInput } from './components/tokenInput';
 
 export interface EntryScreenProps {
   updateState: StateUpdater<StreamingAppState>
@@ -27,10 +29,10 @@ const submit = (us: StateUpdater<StreamingAppState>) => us(s => {
     : s
 })
 
-export const EntryScreen = (props: EntryScreenProps) => (<Page>
+export const EntryScreen = (props: EntryScreenProps) => (<Page className={styles.container}>
   <Title>一緒にカラオケ</Title>
   <Subtitle>Karaoke Together</Subtitle>
-  <input type='text' value={isSome(props.sessionToken) ? props.sessionToken.v : ''}
-    onChange={e => updateSessionToken(props.updateState)(e.target.value)} />
-  <button disabled={!canSubmit(props.sessionToken)} onClick={() => submit(props.updateState)} >Join</button>
+  <p>Enter your connection code below to join:</p>
+  <TokenInput value={props.sessionToken} onChange={sessionToken => props.updateState(s => s.screen === 'entry' ? {...s, sessionToken } : s)} />
+  <Button disabled={!canSubmit(props.sessionToken)} onClick={() => submit(props.updateState)} label='Join' />
 </Page>)

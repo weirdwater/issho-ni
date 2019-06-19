@@ -5,6 +5,7 @@ import { PermissionState } from './types';
 import { LoadingPage } from './loadingPage';
 import { Page } from './components/page';
 import { Heading } from './components/heading';
+import { Button } from './components/button';
 
 export interface PermissionScreenProps {
   updateState: StateUpdater<StreamingAppState>
@@ -87,7 +88,7 @@ export class PermissionScreen extends React.Component<PermissionScreenProps, {}>
         your camera permissions. If you do not get a prompt and the camera does
         not turn on, please grant Issho Ni access through your browser's settings.</p>
       }
-      <button onClick={this.attemptVideoStream} >Continue</button>
+      <Button onClick={this.attemptVideoStream} label='Continue' />
     </Page>)
   }
 

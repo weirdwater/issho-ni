@@ -1,0 +1,21 @@
+
+.field {
+  min-width: 0;
+  font-size: 64px;
+  font-family: 'Staatliches', sans-serif;
+  letter-spacing: .3em;
+  text-align: center;
+  text-indent: .3em;
+  color: white;
+  border: none;
+  border-bottom: 3px solid var(--hot-pink);
+  background: none;
+  margin: 32px 0 32px 0;
+  transition: border .3s, margin-bottom .3s;
+  border-radius: 0;
+
+  &:focus {
+    border-bottom-width: 5px;
+    margin-bottom: 30px;
+  }
+}

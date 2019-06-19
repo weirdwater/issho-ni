@@ -1,4 +1,9 @@
 
 .container {
   display: grid;
+  grid-template-columns: 32px [content-start] 1fr [content-end] 32px;
+
+  * {
+    grid-column: content-start / content-end;
+  }
 }
