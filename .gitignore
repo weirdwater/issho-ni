@@ -1,6 +1,6 @@
 # compiled output
 /dist
-/static/assets/js
+/static/assets/compiled
 /node_modules
 
 # Logs

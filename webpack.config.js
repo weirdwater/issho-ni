@@ -32,7 +32,7 @@ module.exports = {
     presenter: path.resolve(__dirname, 'clients/presenter/main.tsx'),
   },
   output: {
-    path: path.resolve(__dirname, 'static/assets/js'),
+    path: path.resolve(__dirname, 'static/assets/compiled'),
     filename: '[name].bundle.js'
   },
   resolve: {
