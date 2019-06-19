@@ -1,6 +1,27 @@
 const webpack = require('webpack')
-const WebpackShellPlugin = require('webpack-shell-plugin')
 const path = require('path')
+const WebpackShellPlugin = require('webpack-shell-plugin')
+const MiniCssExtractPlugin = require('mini-css-extract-plugin');
+
+function recursiveIssuer(m) {
+  if (m.issuer) {
+    return recursiveIssuer(m.issuer);
+  } else if (m.name) {
+    return m.name;
+  } else {
+    return false;
+  }
+}
+
+function cacheGroup(entryName) {
+  return {
+    name: entryName,
+    test: (m, c, entry = entryName) =>
+      m.constructor.name === 'CssModule' && recursiveIssuer(m) === entry,
+    chunks: 'all',
+    enforce: true,
+  }
+}
 
 module.exports = {
   mode: 'development',
@@ -31,9 +52,9 @@ module.exports = {
         ]
       },
       {
-        test: /\.s?css$/,
+        test: /\.scss$/,
         use: [
-          'style-loader',
+          MiniCssExtractPlugin.loader,
           {
             loader: 'css-loader',
             options: {
@@ -50,7 +71,21 @@ module.exports = {
       }
     ]
   },
+  optimization: {
+    splitChunks: {
+      cacheGroups: {
+        clientStyles: cacheGroup('client'),
+        publicStyles: cacheGroup('public'),
+        dashboardStyles: cacheGroup('dashboard'),
+        presenterStyles: cacheGroup('presenter'),
+      },
+    },
+  },
   plugins: [
+    new MiniCssExtractPlugin({
+      filename: '[name].css',
+      chunkFilename: '[id].css',
+    }),
     new WebpackShellPlugin({
       onBuildStart: ['yarn build:style-typings'],
       dev: false
