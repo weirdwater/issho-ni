@@ -24,10 +24,18 @@ export type Fun<a, b> = (_: a) => b
 
 export type Action<a> = Fun<a, a>
 
-export const none = (): None => ({ k: 'l', v: {} })
+export const left = <a>(_: a): Left<a> => ({ k: 'l', v: _ })
 
-export const some = <a>(_: a): Some<a> => ({ k: 'r', v: _ })
+export const right = <a>(_: a): Right<a> => ({ k: 'r', v: _ })
 
-export const isSome = <a>(_: Maybe<a>): _ is Some<a> => _.k === 'r'
+export const isLeft = <a, b>(_: Either<a, b>): _ is Left<a> => _.k === 'l'
 
-export const isNone = <a>(_: Maybe<a>): _ is None => _.k === 'l'
+export const isRight = <a, b>(_: Either<a, b>): _ is Right<b> => _.k === 'r'
+
+export const none = (): None => left<Unit>({})
+
+export const some = <a>(_: a): Some<a> => right<a>(_)
+
+export const isSome = isRight
+
+export const isNone = isLeft

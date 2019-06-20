@@ -3,7 +3,8 @@ import { Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import { AuthSession } from './authSession.entity';
 import * as crypto from 'crypto'
-import { Maybe } from 'shared/fun';
+import { Maybe, none, some, left, right } from 'shared/fun';
+import { Consumer } from './auth.helpers';
 
 @Injectable()
 export class AuthService {
@@ -34,6 +35,24 @@ export class AuthService {
       }
       throw e
     }
+  }
+
+  async validate(token: string): Promise<Maybe<Consumer>> {
+    const session = await this.authSessionRepository.findOne(token, { relations: ['user', 'client'] })
+
+    if (session === undefined) {
+      return none()
+    }
+
+    if (session.user) {
+      return some(left(session.user))
+    }
+
+    if (session.client) {
+      return some(right(session.client))
+    }
+
+    return none()
   }
 
 }
