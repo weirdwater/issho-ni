@@ -1,10 +1,8 @@
-import { Injectable, BadRequestException } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { User } from './user.entity';
 import { Repository } from 'typeorm';
 import { UserWithEmailExistsException } from '../../exceptions/userWithEmailExists.exception';
-import { Maybe, none, some } from 'shared/fun';
-import * as bcrypt from 'bcrypt'
 
 @Injectable()
 export class UserService {
@@ -32,22 +30,6 @@ export class UserService {
       }
       throw e
     }
-  }
-
-  async authenticate(credentials: { email: string, password: string }): Promise<Maybe<User>> {
-    const user = await this.userRepository.findOne({ email: credentials.email })
-
-    if (user === undefined) {
-      return none()
-    }
-
-    const matches = await bcrypt.compare(credentials.password, user.encryptedPassword)
-
-    if (matches) {
-      return some(user)
-    }
-
-    return none()
   }
 
 }

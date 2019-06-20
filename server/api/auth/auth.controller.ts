@@ -1,4 +1,4 @@
-import { Controller, UsePipes, ValidationPipe, Post, Body, Req, UnauthorizedException } from '@nestjs/common'
+import { Controller, UsePipes, ValidationPipe, Post, Body, Req, UnauthorizedException, Inject, forwardRef } from '@nestjs/common'
 import { AuthenticateUserDTO } from './authenticateUser.dto'
 import { AuthService } from './auth.service'
 import { isNone } from 'shared/fun'
@@ -13,14 +13,12 @@ export class AuthController {
 
   constructor(
     private readonly authService: AuthService,
-    private readonly userService: UserService,
-    private readonly clientService: ClientService,
   ) {}
 
   @Post('user')
   @UsePipes(ValidationPipe)
   async authenticateUser(@Body() dto: AuthenticateUserDTO, @Req() req: Request): Promise<string> {
-    const user = await this.userService.authenticate(dto)
+    const user = await this.authService.authenticateUser(dto)
 
     if (isNone(user)) {
       throw new UnauthorizedException()
@@ -36,7 +34,7 @@ export class AuthController {
   @Post('client')
   @UsePipes(ValidationPipe)
   async authenticateClient(@Body() dto: AuthenticateClientDTO, @Req() req: Request): Promise<string> {
-    const client = await this.clientService.authenticate(dto)
+    const client = await this.authService.authenticateClient(dto)
 
     if (isNone(client)) {
       throw new UnauthorizedException()

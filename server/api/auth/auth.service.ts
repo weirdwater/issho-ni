@@ -1,10 +1,15 @@
-import { Injectable } from '@nestjs/common';
-import { Repository } from 'typeorm';
-import { InjectRepository } from '@nestjs/typeorm';
-import { AuthSession } from './authSession.entity';
+import { Injectable, NotImplementedException } from '@nestjs/common'
+import { Repository } from 'typeorm'
+import { InjectRepository } from '@nestjs/typeorm'
+import { AuthSession } from './authSession.entity'
 import * as crypto from 'crypto'
-import { Maybe, none, some, left, right } from 'shared/fun';
-import { Consumer } from './auth.helpers';
+import { Maybe, none, some, left, right } from 'shared/fun'
+import { Consumer } from './auth.helpers'
+import { AuthenticateUserDTO } from './authenticateUser.dto'
+import { User } from '../user/user.entity'
+import { AuthenticateClientDTO } from './authenticateClient.dto'
+import { Client } from '../client/client.entity'
+import * as bcrypt from 'bcrypt'
 
 @Injectable()
 export class AuthService {
@@ -12,6 +17,10 @@ export class AuthService {
   constructor(
     @InjectRepository(AuthSession)
     private readonly authSessionRepository: Repository<AuthSession>,
+    @InjectRepository(User)
+    private readonly userRepository: Repository<User>,
+    @InjectRepository(Client)
+    private readonly clientRepository: Repository<Client>,
   ) {}
 
   async create(session: AuthSession): Promise<string> {
@@ -53,6 +62,33 @@ export class AuthService {
     }
 
     return none()
+  }
+
+  private authenticateConsumer<a>(getHashedKey: (_: a) => string, key: string): (entity: a) => Promise<Maybe<a>> {
+    return async (consumer: a): Promise<Maybe<a>> => {
+      if (consumer === undefined) {
+        return none()
+      }
+
+      const matches = await bcrypt.compare(key, getHashedKey(consumer))
+
+      if (matches) {
+        return some(consumer)
+      }
+
+      return none()
+    }
+  }
+
+  authenticateUser(credentials: AuthenticateUserDTO): Promise<Maybe<User>> {
+    return this.userRepository.findOne({ email: credentials.email })
+            .then(this.authenticateConsumer(u => u.encryptedPassword, credentials.password))
+
+  }
+
+  authenticateClient(credentials: AuthenticateClientDTO): Promise<Maybe<Client>> {
+    return this.clientRepository.findOne({ id: credentials.id })
+            .then(this.authenticateConsumer(c => c.hashedKey, credentials.key))
   }
 
 }
