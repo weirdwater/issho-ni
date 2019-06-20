@@ -4,9 +4,16 @@ import { SessionService } from './session.service';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { Session } from './session.entity';
 import { ActiveSession } from './activeSession.entity';
+import { PassportModule } from '@nestjs/passport';
+import { AuthModule } from '../auth/auth.module';
 
 @Module({
-  imports: [ TypeOrmModule.forFeature([Session]), TypeOrmModule.forFeature([ActiveSession]) ],
+  imports: [
+    PassportModule.register({ defaultStrategy: 'bearer' }),
+    TypeOrmModule.forFeature([Session]),
+    TypeOrmModule.forFeature([ActiveSession]),
+    AuthModule,
+  ],
   controllers: [ SessionController ],
   providers: [ SessionService ],
 })
