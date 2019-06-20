@@ -1,4 +1,4 @@
-import { Controller, UsePipes, ValidationPipe, Post, Body, Req, UnauthorizedException, Inject, forwardRef } from '@nestjs/common'
+import { Controller, UsePipes, ValidationPipe, Post, Body, Req, UnauthorizedException, Inject, forwardRef, UseGuards, Session } from '@nestjs/common'
 import { AuthenticateUserDTO } from './authenticateUser.dto'
 import { AuthService } from './auth.service'
 import { isNone } from 'shared/fun'
@@ -7,6 +7,8 @@ import { AuthSession } from './authSession.entity'
 import { Request } from 'express'
 import { AuthenticateClientDTO } from './authenticateClient.dto';
 import { ClientService } from '../client/client.service';
+import { AuthGuard } from '@nestjs/passport';
+import { Consumer } from './auth.helpers';
 
 @Controller('api/auth')
 export class AuthController {
@@ -45,6 +47,12 @@ export class AuthController {
     session.address = req.ip
 
     return this.authService.create(session)
+  }
+
+  @Post('close')
+  @UseGuards(AuthGuard())
+  deAuth(@Consumer() consumer: Consumer): Promise<boolean> {
+    return this.authService.deAuth(consumer)
   }
 
 }

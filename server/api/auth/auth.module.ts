@@ -10,7 +10,7 @@ import { Client } from '../client/client.entity'
 
 @Module({
   imports: [
-    PassportModule.register({ defaultStrategy: 'bearer' }),
+    PassportModule.register({ defaultStrategy: 'bearer', property: 'consumer' }),
     TypeOrmModule.forFeature([AuthSession]),
     TypeOrmModule.forFeature([User]),
     TypeOrmModule.forFeature([Client]),

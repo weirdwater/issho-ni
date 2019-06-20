@@ -3,7 +3,7 @@ import { Repository } from 'typeorm'
 import { InjectRepository } from '@nestjs/typeorm'
 import { AuthSession } from './authSession.entity'
 import * as crypto from 'crypto'
-import { Maybe, none, some, left, right } from 'shared/fun'
+import { Maybe, none, some, left, right, isLeft, isRight } from 'shared/fun'
 import { Consumer } from './auth.helpers'
 import { AuthenticateUserDTO } from './authenticateUser.dto'
 import { User } from '../user/user.entity'
@@ -28,10 +28,10 @@ export class AuthService {
 
     try {
       if (session.user) {
-        await this.authSessionRepository.delete({ user: session.user })
+        await this.deAuth(left(session.user))
       }
       if (session.client) {
-        await this.authSessionRepository.delete({ client: session.client })
+        await this.deAuth(right(session.client))
       }
 
       const result = await this.authSessionRepository.insert(session)
@@ -91,4 +91,9 @@ export class AuthService {
             .then(this.authenticateConsumer(c => c.hashedKey, credentials.key))
   }
 
+  async deAuth(consumer: Consumer): Promise<boolean> {
+    const criteria = isLeft(consumer) ? { user: consumer.v } : { client: consumer.v }
+    const r = await this.authSessionRepository.delete(criteria)
+    return 0 < r.affected
+  }
 }

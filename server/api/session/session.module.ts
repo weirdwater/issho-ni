@@ -9,7 +9,7 @@ import { AuthModule } from '../auth/auth.module';
 
 @Module({
   imports: [
-    PassportModule.register({ defaultStrategy: 'bearer' }),
+    PassportModule.register({ defaultStrategy: 'bearer', property: 'consumer' }),
     TypeOrmModule.forFeature([Session]),
     TypeOrmModule.forFeature([ActiveSession]),
     AuthModule,
