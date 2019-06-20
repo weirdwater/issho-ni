@@ -1,8 +1,9 @@
 import * as React from 'react'
-import { Maybe, none, isSome, some } from '../shared/fun';
+import { Maybe, none, isSome, some } from '../../shared/fun';
 import { SessionCredentials } from './types';
 import { ClientCredentials } from '../shared/types';
 import { preseterClient } from '../shared/clientApi';
+import { isNone } from '../../shared/fun';
 
 export interface PresenterAppState {
   client: Maybe<ClientCredentials>
@@ -29,6 +30,14 @@ export class PresenterApp extends React.Component<{}, PresenterAppState> {
         .then(c => this.setState(s => ({...s, client: some(c)})))
         // tslint:disable-next-line:no-console
         .catch(console.error)
+    }
+  }
+
+  componentDidUpdate(prevProps: {}, prevState: PresenterAppState) {
+    if (isSome(this.state.client) && isNone(prevState.client)) {
+      preseterClient.authenticate(this.state.client.v)
+        // tslint:disable-next-line:no-console
+        .then(() => console.log('Authenticated!'))
     }
   }
 

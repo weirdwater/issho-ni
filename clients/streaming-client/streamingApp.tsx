@@ -2,7 +2,7 @@ import * as React from 'react'
 import { EntryScreen } from './screens/entryScreen'
 import { PermissionScreen } from './screens/permissionScreen'
 import { ViewfinderScreen } from './screens/viewfinderScreen'
-import { Maybe, none, Some, Action, isSome, some } from '../../shared/fun';
+import { Maybe, none, Some, Action, isSome, some, isNone } from '../../shared/fun';
 import { PermissionState } from './types';
 import { sourceClient } from '../shared/clientApi';
 import { ClientCredentials } from '../shared/types';
@@ -68,6 +68,14 @@ export class StreamingApp extends React.Component<{}, StreamingAppState> {
         .then(c => this.setState(s => ({...s, credentials: some(c)})))
         // tslint:disable-next-line:no-console
         .catch(console.error)
+    }
+  }
+
+  componentDidUpdate(prevProps: {}, prevState: StreamingAppState) {
+    if (isSome(this.state.credentials) && isNone(prevState.credentials)) {
+      sourceClient.authenticate(this.state.credentials.v)
+        // tslint:disable-next-line:no-console
+        .then(() => console.log('Authenticated!'))
     }
   }
 
