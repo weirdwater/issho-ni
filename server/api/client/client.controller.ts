@@ -1,9 +1,10 @@
-import { Controller, Get, Post, Body, UsePipes, ValidationPipe, UseInterceptors, ClassSerializerInterceptor } from '@nestjs/common';
-import { Client } from './client.entity';
-import { ClientService } from './client.service';
-import { RegisterClientDTO, RegisterClientResponseDTO } from './client.dto';
+import { Controller, Get, Post, Body, UsePipes, ValidationPipe, UseInterceptors, ClassSerializerInterceptor, UseGuards } from '@nestjs/common'
+import { Client } from './client.entity'
+import { ClientService } from './client.service'
+import { RegisterClientDTO, RegisterClientResponseDTO } from './client.dto'
 import * as crypto from 'crypto'
 import * as bcrypt from 'bcrypt'
+import { AuthGuard } from '@nestjs/passport'
 
 @Controller('api/client')
 @UseInterceptors(ClassSerializerInterceptor)
@@ -12,6 +13,7 @@ export class ClientController {
   constructor(private readonly clientService: ClientService) {}
 
   @Get()
+  @UseGuards(AuthGuard())
   findAll(): Promise<Client[]> {
     return this.clientService.findAll()
   }
