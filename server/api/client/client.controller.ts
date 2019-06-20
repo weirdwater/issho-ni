@@ -1,7 +1,7 @@
 import { Controller, Get, Post, Body, UsePipes, ValidationPipe, UseInterceptors, ClassSerializerInterceptor } from '@nestjs/common';
 import { Client } from './client.entity';
 import { ClientService } from './client.service';
-import { RegisterClientDTO, RegisterClientResponseDTO, AuthenticateClientDTO } from './client.dto';
+import { RegisterClientDTO, RegisterClientResponseDTO } from './client.dto';
 import * as crypto from 'crypto'
 import * as bcrypt from 'bcrypt'
 
@@ -29,14 +29,6 @@ export class ClientController {
 
     return this.clientService.register(client)
       .then(id => ({ kind: client.kind, id, key }))
-  }
-
-  @Post('/authenticate')
-  @UsePipes(ValidationPipe)
-  async authenticate(@Body() clientDto: AuthenticateClientDTO): Promise<boolean> {
-    const client = await this.clientService.findOne(clientDto.id)
-
-    return bcrypt.compare(clientDto.key, client.hashedKey)
   }
 
 }

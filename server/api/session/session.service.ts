@@ -1,7 +1,7 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Session } from './session.entity';
-import { Repository } from 'typeorm';
+import { Repository, Connection } from 'typeorm';
 import * as crypto from 'crypto'
 import { ActiveSession } from './activeSession.entity';
 
@@ -63,6 +63,16 @@ export class SessionService {
         reject(e)
       }
     })
+  }
+
+  async findFromToken(token: string): Promise<ActiveSession> {
+    const activeSession = await this.activeSessionRepository.findOne(token, { relations: ['session'] })
+
+    if (activeSession === undefined) {
+      throw new NotFoundException('Active session with the token ${token} not found.')
+    }
+
+    return activeSession
   }
 
 }

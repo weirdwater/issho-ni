@@ -36,6 +36,16 @@ export class SessionController {
     return this.sessionService.create(session)
   }
 
+  @Get(':token/join')
+  async join(@Param('token') token: string): Promise<Session> {
+    const { session } = await this.sessionService.findFromToken(token)
+
+    // add client to session
+    // save session
+
+    return session
+  }
+
   @Get(':id/activate')
   activate(@Param('id') id: number): Promise<string> {
     return this.sessionService.activate(id)

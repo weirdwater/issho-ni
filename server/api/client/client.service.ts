@@ -1,8 +1,11 @@
-import { Injectable } from '@nestjs/common';
-import { Client } from './client.entity';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
-import { ClientIdExistsException } from '../../exceptions/clientIdExists.exception';
+import { Injectable } from '@nestjs/common'
+import { Client } from './client.entity'
+import { InjectRepository } from '@nestjs/typeorm'
+import { Repository } from 'typeorm'
+import { ClientIdExistsException } from '../../exceptions/clientIdExists.exception'
+import { Maybe, none, some } from 'shared/fun'
+import * as bcrypt from 'bcrypt'
+import { AuthenticateClientDTO } from '../auth/authenticateClient.dto';
 
 @Injectable()
 export class ClientService {
@@ -30,6 +33,22 @@ export class ClientService {
 
   findOne(id: string): Promise<Client> {
     return this.clientRepository.findOne(id)
+  }
+
+  async authenticate(credentials: AuthenticateClientDTO): Promise<Maybe<Client>> {
+    const client = await this.clientRepository.findOne({ id: credentials.id })
+
+    if (client === undefined) {
+      return none()
+    }
+
+    const matches = await bcrypt.compare(credentials.key, client.hashedKey)
+
+    if (matches) {
+      return some(client)
+    }
+
+    return none()
   }
 
 }
