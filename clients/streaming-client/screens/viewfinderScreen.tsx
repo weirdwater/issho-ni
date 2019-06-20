@@ -46,7 +46,6 @@ export class ViewfinderScreen extends React.Component<ViewfinderScreenProps, {}>
 
     if (video && isSome(this.props.stream) && isNone(prevProps.stream)) {
       video.srcObject = this.props.stream.v
-      video.onloadedmetadata = () => video.play()
     }
 
     if (isNone(this.props.currentDeviceId)) {
@@ -79,7 +78,7 @@ export class ViewfinderScreen extends React.Component<ViewfinderScreenProps, {}>
           } } >
           { this.props.availableDevices.v.map((d, i) => <DeviceOption key={i} device={d} />) }
         </select>
-        <video className={styles.video} ref={this.video} playsInline={true} ></video>
+        <video className={styles.video} ref={this.video} playsInline autoPlay ></video>
       </Page>
     )
   }
