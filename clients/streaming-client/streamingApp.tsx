@@ -2,7 +2,7 @@ import * as React from 'react'
 import { EntryScreen } from './screens/entryScreen'
 import { PermissionScreen } from './screens/permissionScreen'
 import { ViewfinderScreen } from './screens/viewfinderScreen'
-import { Maybe, none, Some, Action, isSome, some } from '../shared/fun';
+import { Maybe, none, Some, Action, isSome, some } from '../../shared/fun';
 import { PermissionState } from './types';
 import { sourceClient } from '../shared/clientApi';
 import { ClientCredentials } from '../shared/types';

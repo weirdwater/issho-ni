@@ -1,4 +1,4 @@
-import { Action } from './fun'
+import { Action } from '../../shared/fun'
 
 export type StateUpdater<a> = (a: Action<a>, callback?: () => void) => void
 

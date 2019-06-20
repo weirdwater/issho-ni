@@ -1,6 +1,6 @@
 import * as React from 'react'
 import * as styles from './tokenInput.scss'
-import { Maybe, none, some } from '../../shared/fun';
+import { Maybe, none, some } from '../../../shared/fun';
 
 export const TokenInput = (props: {
   value: Maybe<string>,

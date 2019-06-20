@@ -1,5 +1,5 @@
 import { ClientCredentials, ClientType } from './types'
-import { none, Maybe, some } from './fun';
+import { none, Maybe, some } from '../../shared/fun';
 import { v4 as uuid } from 'uuid'
 import * as Cookie from 'js-cookie'
 
