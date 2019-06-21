@@ -2,7 +2,7 @@ import { Injectable, UnauthorizedException } from '@nestjs/common'
 import { PassportStrategy } from '@nestjs/passport'
 import { Strategy } from 'passport-http-bearer'
 import { AuthService } from './auth.service';
-import { isNone } from 'shared/fun';
+import { isNone } from '../../../shared/fun';
 
 @Injectable()
 export class HttpStrategy extends PassportStrategy(Strategy) {

@@ -1,7 +1,7 @@
 import { Controller, UsePipes, ValidationPipe, Post, Body, Req, UnauthorizedException, Inject, forwardRef, UseGuards, Session } from '@nestjs/common'
 import { AuthenticateUserDTO } from './authenticateUser.dto'
 import { AuthService } from './auth.service'
-import { isNone } from 'shared/fun'
+import { isNone } from '../../../shared/fun'
 import { UserService } from '../user/user.service'
 import { AuthSession } from './authSession.entity'
 import { Request } from 'express'

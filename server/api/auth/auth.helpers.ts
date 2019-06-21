@@ -1,4 +1,4 @@
-import { Either, isLeft, isRight } from 'shared/fun'
+import { Either, isLeft, isRight } from '../../../shared/fun'
 import { User } from '../user/user.entity'
 import { Client } from '../client/client.entity'
 import { createParamDecorator } from '@nestjs/common';
