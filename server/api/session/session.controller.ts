@@ -1,11 +1,12 @@
-import { Controller, Get, Param, Post, Body, UseInterceptors, ClassSerializerInterceptor, UseGuards } from '@nestjs/common';
-import { SessionService } from './session.service';
-import { Session } from './session.entity';
-import { CreateSessionDTO } from './session.dto';
-import { User } from '../user/user.entity';
-import * as crypto from 'crypto'
-import { NotFoundInterceptor } from '../not-found.interceptor';
+import { Body, ClassSerializerInterceptor, Controller, ForbiddenException, Get, Param, Post, UseGuards, UseInterceptors } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
+import * as crypto from 'crypto';
+import { Consumer, isUser } from '../auth/auth.helpers';
+import { NotFoundInterceptor } from '../not-found.interceptor';
+import { User } from '../user/user.entity';
+import { CreateSessionDTO } from './session.dto';
+import { Session } from './session.entity';
+import { SessionService } from './session.service';
 
 @Controller('api/session')
 @UseInterceptors(ClassSerializerInterceptor)
@@ -37,18 +38,20 @@ export class SessionController {
     session.title = sessionDto.title
     session.key = crypto.randomBytes(10).toString('hex')
 
-    return this.sessionService.create(session)
+    return this.sessionService.save(session)
   }
 
   @Get(':token/join')
   @UseGuards(AuthGuard())
-  async join(@Param('token') token: string): Promise<Session> {
-    const { session } = await this.sessionService.findFromToken(token)
+  async join(@Param('token') token: string, @Consumer() consumer: Consumer): Promise<Session> {
+    if (isUser(consumer)) {
+      throw new ForbiddenException()
+    }
+    const active = await this.sessionService.findActive(token)
+    const session = await this.sessionService.findOne(active.session.id)
+    session.clients.push(consumer.v)
 
-    // add client to session
-    // save session
-
-    return session
+    return this.sessionService.save(session)
   }
 
   @Get(':id/activate')

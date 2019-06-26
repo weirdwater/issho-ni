@@ -23,7 +23,7 @@ export class SessionService {
     return this.sessionRepository.findOne(sessionId, { relations: ['activeSession', 'owner', 'clients', 'presenter']})
   }
 
-  create(session: Session): Promise<Session> {
+  save(session: Session): Promise<Session> {
     return this.sessionRepository.save(session)
   }
 
@@ -65,7 +65,7 @@ export class SessionService {
     })
   }
 
-  async findFromToken(token: string): Promise<ActiveSession> {
+  async findActive(token: string): Promise<ActiveSession> {
     const activeSession = await this.activeSessionRepository.findOne(token, { relations: ['session'] })
 
     if (activeSession === undefined) {
