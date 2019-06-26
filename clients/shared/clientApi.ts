@@ -28,7 +28,7 @@ const ClientApi = (kind: ClientType) => {
 
       return none()
     },
-    authenticate: async (c: ClientCredentials): Promise<void> => {
+    authenticate: async (c: ClientCredentials): Promise<string> => {
       const res = await fetch('api/auth/client', {
         body: JSON.stringify(c),
         method: 'POST',
@@ -44,6 +44,7 @@ const ClientApi = (kind: ClientType) => {
       const token = await res.text()
 
       saveSessionToken(token)
+      return token
     },
     register: (): Promise<ClientCredentials> => new Promise(
       (resolve, reject) => {

@@ -7,6 +7,7 @@ import { PermissionState } from './types';
 import { sourceClient } from '../shared/clientApi';
 import { ClientCredentials } from '../shared/types';
 import * as styles from './streamingApp.scss'
+import io from 'socket.io-client'
 
 const appStyle = styles.app;
 export interface EntryScreenState {
@@ -71,11 +72,28 @@ export class StreamingApp extends React.Component<{}, StreamingAppState> {
     }
   }
 
-  componentDidUpdate(prevProps: {}, prevState: StreamingAppState) {
+  componentDidUpdate(_: {}, prevState: StreamingAppState) {
     if (isSome(this.state.credentials) && isNone(prevState.credentials)) {
       sourceClient.authenticate(this.state.credentials.v)
-        // tslint:disable-next-line:no-console
-        .then(() => console.log('Authenticated!'))
+        .then(token => {
+          console.log('Connecting to socket')
+          const socket = io(`/`, {
+            transportOptions: {
+              polling: {
+                extraHeaders: {
+                  Authentication: `Bearer ${token}`,
+                },
+              },
+            },
+           })
+          socket.on('connect', () => {
+            console.log('connected to socket')
+            socket.emit('events', 'Hello Server!', console.log)
+          })
+          socket.on('events', (data: any) => console.log('message received', data))
+          socket.on('exception', (data: any) => console.log('message received', data))
+          socket.on('disconnect', () => console.log('disconnected from socket'))
+        })
     }
   }
 
