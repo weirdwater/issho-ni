@@ -6,6 +6,7 @@ import { ApiModule } from './api/api.module';
 import { TypeOrmModule } from '@nestjs/typeorm'
 import { ConnectionOptions } from 'typeorm';
 import { ConfigService } from './config/config.service';
+import { SignalingModule } from './signaling/signaling.module';
 
 const dbConfigFactory = async (configService: ConfigService): Promise<ConnectionOptions> => ({
   type: 'postgres',
@@ -19,7 +20,16 @@ const dbConfigFactory = async (configService: ConfigService): Promise<Connection
 })
 
 @Module({
-  imports: [ConfigModule, TypeOrmModule.forRootAsync({ imports: [ConfigModule], useFactory: dbConfigFactory, inject: [ConfigService] }), ApiModule],
+  imports: [
+    ConfigModule,
+    TypeOrmModule.forRootAsync({
+      imports: [ConfigModule],
+      useFactory: dbConfigFactory,
+      inject: [ConfigService],
+    }),
+    ApiModule,
+    SignalingModule,
+  ],
   controllers: [AppController],
   providers: [AppService],
 })
