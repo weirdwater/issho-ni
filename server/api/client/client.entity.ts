@@ -20,6 +20,9 @@ export class Client {
   })
   kind: ClientType
 
+  @Column({ nullable: true })
+  descriptor: string
+
   @ManyToMany(type => Session, session => session.clients)
   sessions: Session[]
 

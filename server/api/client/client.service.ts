@@ -32,4 +32,8 @@ export class ClientService {
     return this.clientRepository.findOne(id)
   }
 
+  save(client: Client): Promise<Client> {
+    return this.clientRepository.save(client)
+  }
+
 }
