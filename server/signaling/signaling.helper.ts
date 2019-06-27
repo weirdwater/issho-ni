@@ -2,13 +2,13 @@ import { Socket } from 'socket.io'
 import { Maybe, none, some } from 'shared/fun';
 
 export const sessionTokenFromSocket = (socket: Socket): Maybe<string> => {
-  const { authentication } = socket.handshake.headers
+  const { authorization } = socket.handshake.headers
 
-  if (!authentication || typeof authentication !== 'string') {
+  if (!authorization || typeof authorization !== 'string') {
     return none()
   }
 
-  const [ type, token ] = authentication.split(' ')
+  const [ type, token ] = authorization.split(' ')
 
   if (type !== 'Bearer') {
     return none()

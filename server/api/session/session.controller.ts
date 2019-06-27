@@ -1,4 +1,15 @@
-import { Body, ClassSerializerInterceptor, Controller, ForbiddenException, Get, Param, Post, UseGuards, UseInterceptors } from '@nestjs/common';
+import {
+  Body,
+  ClassSerializerInterceptor,
+  Controller,
+  ForbiddenException,
+  Get,
+  Param,
+  Post,
+  UseGuards,
+  UseInterceptors,
+  NotFoundException,
+} from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import * as crypto from 'crypto';
 import { Consumer, isUser } from '../auth/auth.helpers';
@@ -48,6 +59,11 @@ export class SessionController {
       throw new ForbiddenException()
     }
     const active = await this.sessionService.findActive(token)
+
+    if (!active) {
+      throw new NotFoundException()
+    }
+
     const session = await this.sessionService.findOne(active.session.id)
     session.clients.push(consumer.v)
 

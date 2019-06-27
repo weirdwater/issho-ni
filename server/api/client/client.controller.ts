@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, UsePipes, ValidationPipe, UseInterceptors, ClassSerializerInterceptor, UseGuards } from '@nestjs/common'
+import { Controller, Get, Post, Body, UsePipes, ValidationPipe, UseInterceptors, ClassSerializerInterceptor, UseGuards, Param } from '@nestjs/common'
 import { Client } from './client.entity'
 import { ClientService } from './client.service'
 import { RegisterClientDTO, RegisterClientResponseDTO } from './client.dto'
@@ -16,6 +16,12 @@ export class ClientController {
   @UseGuards(AuthGuard())
   findAll(): Promise<Client[]> {
     return this.clientService.findAll()
+  }
+
+  @Get(':id')
+  @UseGuards(AuthGuard())
+  getClient(@Param('id') id: string): Promise<Client> {
+    return this.clientService.findOne(id)
   }
 
   @Post('/register')
