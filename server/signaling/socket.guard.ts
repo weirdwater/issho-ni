@@ -26,6 +26,8 @@ export class SocketGuard implements CanActivate {
       return false
     }
 
+    context.getArgByIndex(0).consumer = session.v
+
     return true
   }
 }

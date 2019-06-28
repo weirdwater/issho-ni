@@ -1,5 +1,6 @@
 import { Socket } from 'socket.io'
 import { Maybe, none, some } from 'shared/fun';
+import { Consumer } from '../api/auth/auth.helpers';
 
 export const sessionTokenFromSocket = (socket: Socket): Maybe<string> => {
   const { authorization } = socket.handshake.headers
@@ -19,4 +20,8 @@ export const sessionTokenFromSocket = (socket: Socket): Maybe<string> => {
   }
 
   return some(token)
+}
+
+export interface AuthSocket extends Socket {
+  consumer: Consumer
 }

@@ -1,12 +1,12 @@
-import { SubscribeMessage, WebSocketGateway, OnGatewayConnection, WsException, WsResponse } from '@nestjs/websockets';
-import { UseGuards, ForbiddenException } from '@nestjs/common';
+import { SubscribeMessage, WebSocketGateway, WsException, WsResponse } from '@nestjs/websockets';
+import { UseGuards } from '@nestjs/common';
 import { SocketGuard } from './socket.guard';
 import { Socket } from 'socket.io';
-import { AuthService } from 'server/api/auth/auth.service';
-import { sessionTokenFromSocket } from './signaling.helper';
-import { isNone } from 'shared/fun';
-import { isUser } from 'server/api/auth/auth.helpers';
-import { ClientService } from 'server/api/client/client.service';
+import { AuthService } from '../api/auth/auth.service';
+import { sessionTokenFromSocket, AuthSocket } from './signaling.helper';
+import { isNone, Maybe } from '../../shared/fun';
+import { isUser, Consumer } from '../api/auth/auth.helpers';
+import { ClientService } from '../api/client/client.service';
 
 @WebSocketGateway()
 export class SignalingGateway {
@@ -26,20 +26,12 @@ export class SignalingGateway {
   // will set/update the client's descriptor
   @SubscribeMessage('descriptor')
   @UseGuards(SocketGuard)
-  async handleDescriptor(socket: Socket, payload: string): Promise<WsResponse<string>> {
-    const token = sessionTokenFromSocket(socket)
-    if (isNone(token)) {
-      throw new WsException('Unauthorized')
-    }
-    const consumer = await this.authService.validate(token.v)
-    if (isNone(consumer)) {
-      throw new WsException('Unauthorized')
-    }
-    if (isUser(consumer.v)) {
+  async handleDescriptor(socket: AuthSocket, payload: string): Promise<WsResponse<string>> {
+    if (isUser(socket.consumer)) {
       throw new WsException('Forbidden')
     }
 
-    const client = { ...consumer.v.v, descriptor: payload }
+    const client = { ...socket.consumer.v, descriptor: payload }
 
     try {
       await this.clientService.save(client)
