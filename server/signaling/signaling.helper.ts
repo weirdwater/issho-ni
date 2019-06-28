@@ -1,5 +1,5 @@
 import { Socket } from 'socket.io'
-import { Maybe, none, some } from 'shared/fun';
+import { Maybe, none, some } from '../../shared/fun';
 import { Consumer } from '../api/auth/auth.helpers';
 
 export const sessionTokenFromSocket = (socket: Socket): Maybe<string> => {

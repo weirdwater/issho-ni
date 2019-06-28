@@ -1,8 +1,8 @@
 import { CanActivate, ExecutionContext, Injectable } from '@nestjs/common';
 import { Observable } from 'rxjs';
 import { Socket } from 'socket.io';
-import { AuthService } from 'server/api/auth/auth.service';
-import { isNone } from 'shared/fun';
+import { AuthService } from '../api/auth/auth.service';
+import { isNone } from '../../shared/fun';
 import { sessionTokenFromSocket } from './signaling.helper';
 
 @Injectable()
