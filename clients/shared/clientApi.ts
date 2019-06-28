@@ -1,6 +1,7 @@
 import * as Cookie from 'js-cookie';
 import { v4 as uuid } from 'uuid';
 import { isNone, Maybe, none, some } from '../../shared/fun';
+import { ClientDTO } from '../../shared/dto';
 import { NoSessionTokenSetException, ApiException } from './apiExceptions';
 import { authenticatedHeaders, baseHeaders } from './headers';
 import { ClientCredentials, ClientType } from './types';
@@ -37,7 +38,7 @@ const ClientApi = (kind: ClientType) => {
 
       return none()
     },
-    getClient: async (c: ClientCredentials): Promise<any> => {
+    getClient: async (c: ClientCredentials): Promise<ClientDTO> => {
       if (isNone(c.sessionToken)) {
         throw new NoSessionTokenSetException()
       }

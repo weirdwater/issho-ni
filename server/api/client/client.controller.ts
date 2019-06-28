@@ -1,10 +1,11 @@
 import { Controller, Get, Post, Body, UsePipes, ValidationPipe, UseInterceptors, ClassSerializerInterceptor, UseGuards, Param } from '@nestjs/common'
 import { Client } from './client.entity'
 import { ClientService } from './client.service'
-import { RegisterClientDTO, RegisterClientResponseDTO } from './client.dto'
+import { RegisterClientDTO, RegisterClientResponseDTO } from '../../../shared/dto'
 import * as crypto from 'crypto'
 import * as bcrypt from 'bcrypt'
 import { AuthGuard } from '@nestjs/passport'
+import { ClientDTO } from '../../../shared/dto';
 
 @Controller('api/client')
 @UseInterceptors(ClassSerializerInterceptor)
@@ -14,13 +15,13 @@ export class ClientController {
 
   @Get()
   @UseGuards(AuthGuard())
-  findAll(): Promise<Client[]> {
+  findAll(): Promise<ClientDTO[]> {
     return this.clientService.findAll()
   }
 
   @Get(':id')
   @UseGuards(AuthGuard())
-  getClient(@Param('id') id: string): Promise<Client> {
+  getClient(@Param('id') id: string): Promise<ClientDTO> {
     return this.clientService.findOne(id)
   }
 
