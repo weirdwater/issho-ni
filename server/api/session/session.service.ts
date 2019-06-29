@@ -19,7 +19,7 @@ export class SessionService {
     return this.sessionRepository.find()
   }
 
-  findOne(sessionId: number): Promise<Session> {
+  findOne(sessionId: string): Promise<Session> {
     return this.sessionRepository.findOne(sessionId, { relations: ['activeSession', 'owner', 'clients', 'presenter']})
   }
 

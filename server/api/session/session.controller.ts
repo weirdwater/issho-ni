@@ -9,13 +9,14 @@ import {
   UseGuards,
   UseInterceptors,
   NotFoundException,
+  Put,
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import * as crypto from 'crypto';
 import { Consumer, isUser } from '../auth/auth.helpers';
 import { NotFoundInterceptor } from '../not-found.interceptor';
 import { User } from '../user/user.entity';
-import { CreateSessionDTO } from '../../../shared/dto';
+import { CreateSessionDTO, JoinSessionDTO } from '../../../shared/dto';
 import { Session } from './session.entity';
 import { SessionService } from './session.service';
 
@@ -34,7 +35,7 @@ export class SessionController {
   @Get(':id')
   @UseGuards(AuthGuard())
   @UseInterceptors(NotFoundInterceptor)
-  getOne(@Param('id') id: number): Promise<Session> {
+  getOne(@Param('id') id: string): Promise<Session> {
     return this.sessionService.findOne(id)
   }
 
@@ -54,7 +55,7 @@ export class SessionController {
 
   @Get(':token/join')
   @UseGuards(AuthGuard())
-  async join(@Param('token') token: string, @Consumer() consumer: Consumer): Promise<Session> {
+  async join(@Param('token') token: string, @Consumer() consumer: Consumer): Promise<JoinSessionDTO> {
     if (isUser(consumer)) {
       throw new ForbiddenException()
     }
@@ -70,13 +71,13 @@ export class SessionController {
     return this.sessionService.save(session)
   }
 
-  @Get(':id/activate')
+  @Put(':id/activate')
   @UseGuards(AuthGuard())
   activate(@Param('id') id: number): Promise<string> {
     return this.sessionService.activate(id)
   }
 
-  @Get(':id/deactivate')
+  @Put(':id/deactivate')
   @UseGuards(AuthGuard())
   deactivate(@Param('id') id: number): Promise<boolean> {
     return this.sessionService.deactivate(id)
