@@ -1,10 +1,12 @@
 import * as React from 'react'
-import { StateUpdater } from '../../shared/types';
+import { StateUpdater, ClientCredentials } from '../../shared/types';
 import { StreamingAppState } from '../streamingApp';
-import { Maybe, isSome, isNone, some, none } from '../../../shared/fun';
+import { Maybe, isSome, isNone, some, none, Some } from '../../../shared/fun';
 import { LoadingPage } from './loadingPage';
 import * as styles from './viewfinderScreen.scss'
 import { Page } from '../components/page';
+import { bearerToken } from '../../shared/headers';
+import io from 'socket.io-client'
 
 const constraints = (deviceId: string): MediaStreamConstraints => ({
   audio: false,
@@ -18,6 +20,8 @@ export interface ViewfinderScreenProps {
   availableDevices: Maybe<MediaDeviceInfo[]>
   currentDeviceId: Maybe<string>
   stream: Maybe<MediaStream>
+  socket: 'connected' | 'disconnected'
+  credentials: Some<ClientCredentials>
 }
 
 const DeviceOption = (props: { device: MediaDeviceInfo}) => (
@@ -28,6 +32,7 @@ const DeviceOption = (props: { device: MediaDeviceInfo}) => (
 
 export class ViewfinderScreen extends React.Component<ViewfinderScreenProps, {}> {
   private video = React.createRef<HTMLVideoElement>()
+  private socket: SocketIOClient.Socket;
 
   componentDidMount() {
     navigator.mediaDevices.enumerateDevices()
@@ -39,6 +44,31 @@ export class ViewfinderScreen extends React.Component<ViewfinderScreenProps, {}>
           currentDeviceId: ds.length ? some(ds[0].deviceId) : none(),
         } : s)
       })
+
+    if (isSome(this.props.credentials.v.sessionToken)) {
+      this.socket = io(`/`, {
+        transportOptions: {
+          polling: {
+            extraHeaders: bearerToken(this.props.credentials.v.sessionToken.v)({}),
+          },
+        },
+      })
+
+      this.socket.on('connect', () => {
+        this.props.updateState(s => s.screen === 'viewfinder' ? { ...s, socket: 'connected' } : s)
+      })
+      // tslint:disable-next-line:no-console
+      this.socket.on('exception', (data: any) => console.error('Exception received', data))
+      // tslint:disable-next-line:no-console
+      this.socket.on('disconnect', () => {
+        this.props.updateState(s => s.screen === 'viewfinder' ? { ...s, socket: 'disconnected' } : s)
+      })
+    }
+  }
+
+  componentWillUnmount() {
+    this.socket.close()
+    this.props.updateState(s => s.screen === 'viewfinder' ? { ...s, socket: 'disconnected' } : s)
   }
 
   componentDidUpdate(prevProps: ViewfinderScreenProps) {

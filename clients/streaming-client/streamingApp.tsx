@@ -1,17 +1,14 @@
-import * as React from 'react'
-import { EntryScreen } from './screens/entryScreen'
-import { PermissionScreen } from './screens/permissionScreen'
-import { ViewfinderScreen } from './screens/viewfinderScreen'
-import { Maybe, none, Some, Action, isSome, some, isNone, Async, pristine, isPristine, isLoading, isLoaded, AsyncLoaded } from '../../shared/fun';
-import { PermissionState } from './types';
-import { sourceClient } from '../shared/clientApi';
-import { ClientCredentials, StateUpdater } from '../shared/types';
-import * as styles from './streamingApp.scss'
-import io from 'socket.io-client'
-import { bearerToken } from '../shared/headers';
+import * as React from 'react';
 import { JoinSessionDTO } from '../../shared/dto';
-import { sessionApi } from '../shared/sessionApi';
+import { Action, Async, AsyncLoaded, isLoaded, isLoading, isNone, isPristine, isSome, Maybe, none, pristine, Some, some } from '../../shared/fun';
+import { sourceClient } from '../shared/clientApi';
+import { ClientCredentials } from '../shared/types';
 import { joinSession } from './apiHandler';
+import { EntryScreen } from './screens/entryScreen';
+import { PermissionScreen } from './screens/permissionScreen';
+import { ViewfinderScreen } from './screens/viewfinderScreen';
+import * as styles from './streamingApp.scss';
+import { PermissionState } from './types';
 
 export interface EntryScreenState {
   screen: 'entry',
@@ -34,6 +31,7 @@ export interface ViewfinderScreenState {
   availableDevices: Maybe<MediaDeviceInfo[]>
   currentDeviceId: Maybe<string>
   stream: Maybe<MediaStream>
+  socket: 'disconnected' | 'connected'
 }
 
 export type StreamingAppState = EntryScreenState | PermissionScreenState | ViewfinderScreenState
@@ -45,6 +43,7 @@ export const initialViewfinderState = (s: PermissionScreenState): ViewfinderScre
   availableDevices: none(),
   currentDeviceId: none(),
   stream: none(),
+  socket: 'disconnected',
 })
 
 const setClientSessionToken = (sessionToken: Maybe<string>): Action<StreamingAppState> => s => isNone(s.credentials) ? s :
@@ -113,28 +112,6 @@ export class StreamingApp extends React.Component<{}, StreamingAppState> {
         }
         throw e
       })
-
-      // Setup socket communication
-      // tslint:disable-next-line:no-console
-      console.log('Connecting to socket')
-      const socket = io(`/`, {
-        transportOptions: {
-          polling: {
-            extraHeaders: bearerToken(c1.v.sessionToken.v)({}),
-          },
-        },
-        })
-      socket.on('connect', () => {
-        // tslint:disable-next-line:no-console
-        console.log('connected to socket, sending fake descriptor')
-        socket.emit('descriptor', 'fakeDescriptor')
-      })
-      // tslint:disable-next-line:no-console
-      socket.on('descriptor', (data: any) => console.log('message received re: descriptor:', data))
-      // tslint:disable-next-line:no-console
-      socket.on('exception', (data: any) => console.log('message received', data))
-      // tslint:disable-next-line:no-console
-      socket.on('disconnect', () => console.log('disconnected from socket'))
     }
 
     if (isSome(this.state.credentials) && isLoading(this.state.session) && isPristine(prevState.session) && this.state.screen === 'entry') {
