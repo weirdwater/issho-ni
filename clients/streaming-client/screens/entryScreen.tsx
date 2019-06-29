@@ -34,6 +34,9 @@ const submit = (p: EntryScreenProps) => p.updateState(s => {
   if (!canSubmit(p)) {
     return s
   }
+  if (s.screen !== 'entry') {
+    return s
+  }
   return {...s, session: loading()}
 })
 

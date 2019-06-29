@@ -2,7 +2,7 @@ import * as React from 'react'
 import { EntryScreen } from './screens/entryScreen'
 import { PermissionScreen } from './screens/permissionScreen'
 import { ViewfinderScreen } from './screens/viewfinderScreen'
-import { Maybe, none, Some, Action, isSome, some, isNone, Async, pristine, isPristine, isLoading, isLoaded } from '../../shared/fun';
+import { Maybe, none, Some, Action, isSome, some, isNone, Async, pristine, isPristine, isLoading, isLoaded, AsyncLoaded } from '../../shared/fun';
 import { PermissionState } from './types';
 import { sourceClient } from '../shared/clientApi';
 import { ClientCredentials, StateUpdater } from '../shared/types';
@@ -22,16 +22,14 @@ export interface EntryScreenState {
 
 export interface PermissionScreenState {
   screen: 'permission',
-  sessionToken: Some<string>
-  session: Async<JoinSessionDTO>
+  session: AsyncLoaded<JoinSessionDTO>
   credentials: Some<ClientCredentials>
   permission: PermissionState
 }
 
 export interface ViewfinderScreenState {
   screen: 'viewfinder'
-  sessionToken: Some<string>
-  session: Async<JoinSessionDTO>
+  session: AsyncLoaded<JoinSessionDTO>
   credentials: Some<ClientCredentials>
   availableDevices: Maybe<MediaDeviceInfo[]>
   currentDeviceId: Maybe<string>
@@ -42,7 +40,6 @@ export type StreamingAppState = EntryScreenState | PermissionScreenState | Viewf
 
 export const initialViewfinderState = (s: PermissionScreenState): ViewfinderScreenState => ({
   screen: 'viewfinder',
-  sessionToken: s.sessionToken,
   credentials: s.credentials,
   session: s.session,
   availableDevices: none(),
@@ -52,7 +49,6 @@ export const initialViewfinderState = (s: PermissionScreenState): ViewfinderScre
 
 const setClientSessionToken = (sessionToken: Maybe<string>): Action<StreamingAppState> => s => isNone(s.credentials) ? s :
   { ...s, credentials: some({ ...s.credentials.v, sessionToken }) }
-
 export class StreamingApp extends React.Component<{}, StreamingAppState> {
 
   constructor(props: {}) {
@@ -119,6 +115,7 @@ export class StreamingApp extends React.Component<{}, StreamingAppState> {
       })
 
       // Setup socket communication
+      // tslint:disable-next-line:no-console
       console.log('Connecting to socket')
       const socket = io(`/`, {
         transportOptions: {
@@ -128,23 +125,26 @@ export class StreamingApp extends React.Component<{}, StreamingAppState> {
         },
         })
       socket.on('connect', () => {
+        // tslint:disable-next-line:no-console
         console.log('connected to socket, sending fake descriptor')
         socket.emit('descriptor', 'fakeDescriptor')
       })
+      // tslint:disable-next-line:no-console
       socket.on('descriptor', (data: any) => console.log('message received re: descriptor:', data))
+      // tslint:disable-next-line:no-console
       socket.on('exception', (data: any) => console.log('message received', data))
+      // tslint:disable-next-line:no-console
       socket.on('disconnect', () => console.log('disconnected from socket'))
     }
 
-    if (isSome(this.state.credentials) && isLoading(this.state.session) && isPristine(prevState.session)) {
+    if (isSome(this.state.credentials) && isLoading(this.state.session) && isPristine(prevState.session) && this.state.screen === 'entry') {
       joinSession(this.state).then(this.updateState)
     }
 
     if (isLoaded(this.state.session) && isLoading(prevState.session)) {
-      this.updateState(s => s.screen === 'entry' && isSome(s.sessionToken) && isSome(s.credentials) ? {
+      this.updateState(s => s.screen === 'entry' && isSome(s.credentials) && isLoaded(s.session) ? {
         screen: 'permission',
         permission: 'loading',
-        sessionToken: s.sessionToken,
         session: s.session,
         credentials: s.credentials,
       } : s)
