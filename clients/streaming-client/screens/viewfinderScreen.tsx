@@ -56,15 +56,14 @@ export class ViewfinderScreen extends React.Component<ViewfinderScreenProps, {}>
         } : s)
       })
 
-    this.peerConnection.onicecandidate = c => console.log(c)
+    this.peerConnection.onicecandidate = c => this.socket.emit('candidate', c.candidate)
 
     this.peerConnection.onnegotiationneeded = async () => {
       try {
-        console.log('sending local descriptor')
         await this.peerConnection.setLocalDescription(await this.peerConnection.createOffer())
         this.socket.emit('descriptor', this.peerConnection.localDescription)
       } catch (e) {
-        console.error(e)
+        throw e
       }
     }
 

@@ -26,23 +26,29 @@ export class SignalingGateway {
   // will set/update the client's descriptor
   @SubscribeMessage('descriptor')
   @UseGuards(SocketGuard)
-  async handleDescriptor(socket: AuthSocket, payload: DescriptorDTO): Promise<WsResponse<string>> {
+  async handleDescriptor(socket: AuthSocket, descriptor: DescriptorDTO): Promise<void> {
     if (isUser(socket.consumer)) {
       throw new WsException('Forbidden')
     }
 
-    const client = { ...socket.consumer.v, descriptor: payload.sdp }
+    const client = { ...socket.consumer.v, descriptor: descriptor.sdp }
 
     try {
       await this.clientService.save(client)
       // TODO: Send updated descriptor to relevant peers
-      return { event: 'descriptor', data: 'set' }
     } catch (e) {
       // tslint:disable-next-line:no-console
       console.error(e)
       throw new WsException('Something went wrong saving the descriptor')
     }
 
+  }
+
+  // TODO: Figure out what to do on candidate
+  @SubscribeMessage('candidate')
+  @UseGuards(SocketGuard)
+  async handleCandidate(socket: AuthSocket, candidate: any) {
+    console.log(candidate)
   }
 
   // presenterDescriptor
