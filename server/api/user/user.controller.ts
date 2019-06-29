@@ -1,7 +1,7 @@
 import { Controller, Get, Param, Post, Body, UseInterceptors, ClassSerializerInterceptor, UseGuards } from '@nestjs/common'
 import { User } from './user.entity'
 import { UserService } from './user.service'
-import { CreateUserDTO } from './user.dto'
+import { CreateUserDTO } from '../../../shared/dto'
 import * as bcrypt from 'bcrypt'
 import { NotFoundInterceptor } from '../not-found.interceptor';
 import { AuthGuard } from '@nestjs/passport';
