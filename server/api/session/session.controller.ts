@@ -15,7 +15,7 @@ import * as crypto from 'crypto';
 import { Consumer, isUser } from '../auth/auth.helpers';
 import { NotFoundInterceptor } from '../not-found.interceptor';
 import { User } from '../user/user.entity';
-import { CreateSessionDTO } from './session.dto';
+import { CreateSessionDTO } from '../../../shared/dto';
 import { Session } from './session.entity';
 import { SessionService } from './session.service';
 
