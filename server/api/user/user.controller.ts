@@ -1,4 +1,4 @@
-import { Controller, Get, Param, Post, Body, UseInterceptors, ClassSerializerInterceptor, UseGuards } from '@nestjs/common'
+import { Controller, Get, Param, Post, Body, UseInterceptors, ClassSerializerInterceptor, UseGuards, UsePipes, ValidationPipe } from '@nestjs/common'
 import { User } from './user.entity'
 import { UserService } from './user.service'
 import { CreateUserDTO } from '../../../shared/dto'
@@ -26,6 +26,7 @@ export class UserController {
   }
 
   @Post()
+  @UsePipes(ValidationPipe)
   async create(@Body() userDTO: CreateUserDTO): Promise<User> {
 
     const user = new User()
