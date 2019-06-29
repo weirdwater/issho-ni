@@ -2,24 +2,28 @@ import * as React from 'react'
 import { EntryScreen } from './screens/entryScreen'
 import { PermissionScreen } from './screens/permissionScreen'
 import { ViewfinderScreen } from './screens/viewfinderScreen'
-import { Maybe, none, Some, Action, isSome, some, isNone } from '../../shared/fun';
+import { Maybe, none, Some, Action, isSome, some, isNone, Async, pristine, isPristine, isLoading, isLoaded } from '../../shared/fun';
 import { PermissionState } from './types';
 import { sourceClient } from '../shared/clientApi';
-import { ClientCredentials } from '../shared/types';
+import { ClientCredentials, StateUpdater } from '../shared/types';
 import * as styles from './streamingApp.scss'
 import io from 'socket.io-client'
 import { bearerToken } from '../shared/headers';
+import { JoinSessionDTO } from '../../shared/dto';
+import { sessionApi } from '../shared/sessionApi';
+import { joinSession } from './apiHandler';
 
-const appStyle = styles.app;
 export interface EntryScreenState {
   screen: 'entry',
   sessionToken: Maybe<string>
+  session: Async<JoinSessionDTO>
   credentials: Maybe<ClientCredentials>
 }
 
 export interface PermissionScreenState {
   screen: 'permission',
   sessionToken: Some<string>
+  session: Async<JoinSessionDTO>
   credentials: Some<ClientCredentials>
   permission: PermissionState
 }
@@ -27,6 +31,7 @@ export interface PermissionScreenState {
 export interface ViewfinderScreenState {
   screen: 'viewfinder'
   sessionToken: Some<string>
+  session: Async<JoinSessionDTO>
   credentials: Some<ClientCredentials>
   availableDevices: Maybe<MediaDeviceInfo[]>
   currentDeviceId: Maybe<string>
@@ -39,6 +44,7 @@ export const initialViewfinderState = (s: PermissionScreenState): ViewfinderScre
   screen: 'viewfinder',
   sessionToken: s.sessionToken,
   credentials: s.credentials,
+  session: s.session,
   availableDevices: none(),
   currentDeviceId: none(),
   stream: none(),
@@ -56,6 +62,7 @@ export class StreamingApp extends React.Component<{}, StreamingAppState> {
       screen: 'entry',
       sessionToken: none(),
       credentials: none(),
+      session: pristine(),
     }
 
     this.updateState = this.updateState.bind(this)
@@ -86,11 +93,21 @@ export class StreamingApp extends React.Component<{}, StreamingAppState> {
       sourceClient.authenticate(c1.v)
         .then(token => this.setState(setClientSessionToken(some(token))))
         // tslint:disable-next-line:no-console
+        .catch(e => {if (e.name === 'Unauthorized') {
+          // tslint:disable-next-line:no-console
+          console.error('Could not authenticate using stored credentials, re-registering client.')
+          sourceClient.clearCredentials()
+          this.setState(s => ({...s, credentials: none()}))
+          sourceClient.register()
+            .then(c => this.setState(s => ({...s, credentials: some(c)})))
+            // tslint:disable-next-line:no-console
+            .catch(console.error)
+        }})
+        // tslint:disable-next-line:no-console
         .catch(e => console.error('Could not authenticate client', e))
     }
 
-    if (isSome(c1) && isSome(c1.v.sessionToken) && (isNone(c0) || isNone(c0.v.sessionToken))
-    ) {
+    if (isSome(c1) && isSome(c1.v.sessionToken) && (isNone(c0) || isNone(c0.v.sessionToken))) {
       // Check if session token works
       sourceClient.getClient(c1.v).catch((e: Error) => {
         if (e.name === 'Unauthorized') {
@@ -117,6 +134,20 @@ export class StreamingApp extends React.Component<{}, StreamingAppState> {
       socket.on('descriptor', (data: any) => console.log('message received re: descriptor:', data))
       socket.on('exception', (data: any) => console.log('message received', data))
       socket.on('disconnect', () => console.log('disconnected from socket'))
+    }
+
+    if (isSome(this.state.credentials) && isLoading(this.state.session) && isPristine(prevState.session)) {
+      joinSession(this.state).then(this.updateState)
+    }
+
+    if (isLoaded(this.state.session) && isLoading(prevState.session)) {
+      this.updateState(s => s.screen === 'entry' && isSome(s.sessionToken) && isSome(s.credentials) ? {
+        screen: 'permission',
+        permission: 'loading',
+        sessionToken: s.sessionToken,
+        session: s.session,
+        credentials: s.credentials,
+      } : s)
     }
   }
 

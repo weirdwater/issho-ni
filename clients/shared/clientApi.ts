@@ -1,7 +1,7 @@
 import * as Cookie from 'js-cookie';
 import { v4 as uuid } from 'uuid';
 import { isNone, Maybe, none, some } from '../../shared/fun';
-import { ClientDTO } from '../../shared/dto';
+import { ClientDTO, AuthenticateClientDTO } from '../../shared/dto';
 import { NoSessionTokenSetException, ApiException } from './apiExceptions';
 import { authenticatedHeaders, baseHeaders } from './headers';
 import { ClientCredentials, ClientType } from './types';
@@ -38,6 +38,11 @@ const ClientApi = (kind: ClientType) => {
 
       return none()
     },
+    clearCredentials: () => {
+      Cookie.remove(idCookie)
+      Cookie.remove(keyCookie)
+      Cookie.remove(sessionCookie)
+    },
     getClient: async (c: ClientCredentials): Promise<ClientDTO> => {
       if (isNone(c.sessionToken)) {
         throw new NoSessionTokenSetException()
@@ -54,14 +59,19 @@ const ClientApi = (kind: ClientType) => {
       return res.json()
     },
     authenticate: async (c: ClientCredentials): Promise<string> => {
+      const dto: AuthenticateClientDTO = { id: c.id, key: c.key}
       const res = await fetch('api/auth/client', {
-        body: JSON.stringify(c),
+        body: JSON.stringify(dto),
         method: 'POST',
         headers: baseHeaders,
       })
 
+      if (res.status === 401) {
+        throw new UnauthorizedException('Could not authenticate client')
+      }
+
       if (res.status !== 201) {
-        throw new Error(`Could not authenticate client: ${res.statusText}`)
+        throw new ApiException(`Could not authenticate client: ${res.statusText}`)
       }
 
       const token = await res.text()
