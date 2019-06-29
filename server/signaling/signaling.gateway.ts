@@ -1,16 +1,16 @@
-import { SubscribeMessage, WebSocketGateway, WsException, WsResponse, OnGatewayConnection } from '@nestjs/websockets';
-import { UseGuards } from '@nestjs/common';
-import { SocketGuard } from './socket.guard';
-import { Socket } from 'socket.io';
-import { AuthService } from '../api/auth/auth.service';
-import { sessionTokenFromSocket, AuthSocket } from './signaling.helper';
-import { isNone, Maybe } from '../../shared/fun';
-import { isUser, Consumer } from '../api/auth/auth.helpers';
-import { ClientService } from '../api/client/client.service';
+import { OnGatewayConnection, SubscribeMessage, WebSocketGateway, WebSocketServer, WsException, OnGatewayDisconnect } from '@nestjs/websockets';
 import { DescriptorDTO } from 'shared/dto/signaling/descriptor.dto';
+import { Server, Socket } from 'socket.io';
+import { isNone } from '../../shared/fun';
+import { isUser } from '../api/auth/auth.helpers';
+import { AuthService } from '../api/auth/auth.service';
+import { ClientService } from '../api/client/client.service';
+import { AuthSocket, sessionTokenFromSocket } from './signaling.helper';
 
 @WebSocketGateway()
 export class SignalingGateway implements OnGatewayConnection {
+  @WebSocketServer()
+  server: Server;
 
   constructor(
     private readonly authService: AuthService,
@@ -37,7 +37,7 @@ export class SignalingGateway implements OnGatewayConnection {
 
     if (session) {
       const room = `${session}_${ isUser(consumer.v) ? 'user' : consumer.v.v.kind }`
-      socket.join(`${session}_clients`)
+      socket.join(room)
     }
   }
 
@@ -70,7 +70,7 @@ export class SignalingGateway implements OnGatewayConnection {
   // TODO: Figure out what to do on candidate
   @SubscribeMessage('candidate')
   async handleCandidate(socket: AuthSocket, candidate: any) {
-    console.log(candidate)
+    // console.log(candidate)
   }
 
   // presenterDescriptor
