@@ -1,15 +1,14 @@
-import { Injectable, NotImplementedException } from '@nestjs/common'
-import { Repository } from 'typeorm'
-import { InjectRepository } from '@nestjs/typeorm'
-import { AuthSession } from './authSession.entity'
-import * as crypto from 'crypto'
-import { Maybe, none, some, left, right, isLeft, isRight } from '../../../shared/fun'
-import { Consumer } from './auth.helpers'
-import { AuthenticateUserDTO } from './authenticateUser.dto'
-import { User } from '../user/user.entity'
-import { AuthenticateClientDTO } from './authenticateClient.dto'
-import { Client } from '../client/client.entity'
-import * as bcrypt from 'bcrypt'
+import { Injectable } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import * as bcrypt from 'bcrypt';
+import * as crypto from 'crypto';
+import { Repository } from 'typeorm';
+import { AuthenticateClientDTO, AuthenticateUserDTO } from '../../../shared/dto';
+import { isLeft, left, Maybe, none, right, some } from '../../../shared/fun';
+import { Client } from '../client/client.entity';
+import { User } from '../user/user.entity';
+import { Consumer } from './auth.helpers';
+import { AuthSession } from './authSession.entity';
 
 @Injectable()
 export class AuthService {

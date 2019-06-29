@@ -1,14 +1,11 @@
-import { Controller, UsePipes, ValidationPipe, Post, Body, Req, UnauthorizedException, Inject, forwardRef, UseGuards, Session } from '@nestjs/common'
-import { AuthenticateUserDTO } from './authenticateUser.dto'
-import { AuthService } from './auth.service'
-import { isNone } from '../../../shared/fun'
-import { UserService } from '../user/user.service'
-import { AuthSession } from './authSession.entity'
-import { Request } from 'express'
-import { AuthenticateClientDTO } from './authenticateClient.dto';
-import { ClientService } from '../client/client.service';
+import { Body, Controller, Post, Req, UnauthorizedException, UseGuards, UsePipes, ValidationPipe } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
+import { Request } from 'express';
+import { AuthenticateClientDTO, AuthenticateUserDTO } from '../../../shared/dto';
+import { isNone } from '../../../shared/fun';
 import { Consumer } from './auth.helpers';
+import { AuthService } from './auth.service';
+import { AuthSession } from './authSession.entity';
 
 @Controller('api/auth')
 export class AuthController {

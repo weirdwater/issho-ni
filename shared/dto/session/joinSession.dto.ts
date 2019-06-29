@@ -1,5 +1,5 @@
 import { IsUUID, IsDate } from 'class-validator'
-import { ActiveSession } from 'server/api/session/activeSession.entity'
+import { ActiveSession } from '../../../server/api/session/activeSession.entity'
 
 export class JoinSessionDTO {
 
