@@ -1,7 +1,7 @@
 import * as React from 'react'
 import { StateUpdater, ClientCredentials } from '../../shared/types';
 import { StreamingAppState } from '../streamingApp';
-import { Maybe, isSome, isNone, some, none, Some, Action } from '../../../shared/fun';
+import { Maybe, isSome, isNone, some, none, Some, Action, AsyncLoaded } from '../../../shared/fun';
 import { LoadingPage } from './loadingPage';
 import * as styles from './viewfinderScreen.scss'
 import { Page } from '../components/page';
@@ -10,6 +10,7 @@ import io from 'socket.io-client'
 import { UnsupportedSDPTypeException } from '../../shared/socketExceptions/UnsupportedSDPTypeException';
 import { SocketException } from '../../shared/socketExceptions/socketException';
 import { SocketState } from '../types';
+import { JoinSessionDTO } from '../../../shared/dto';
 
 const constraints = (deviceId: string): MediaStreamConstraints => ({
   audio: false,
@@ -24,6 +25,7 @@ export interface ViewfinderScreenProps {
   currentDeviceId: Maybe<string>
   stream: Maybe<MediaStream>
   socket: SocketState
+  session: AsyncLoaded<JoinSessionDTO>
   credentials: Some<ClientCredentials>
 }
 
@@ -68,7 +70,7 @@ export class ViewfinderScreen extends React.Component<ViewfinderScreenProps, {}>
     }
 
     if (isSome(this.props.credentials.v.sessionToken)) {
-      this.socket = io(`/`, {
+      this.socket = io(`/?session=${this.props.session.v.id}`, {
         transportOptions: {
           polling: {
             extraHeaders: bearerToken(this.props.credentials.v.sessionToken.v)({}),

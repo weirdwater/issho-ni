@@ -1,4 +1,4 @@
-import { SubscribeMessage, WebSocketGateway, WsException, WsResponse } from '@nestjs/websockets';
+import { SubscribeMessage, WebSocketGateway, WsException, WsResponse, OnGatewayConnection } from '@nestjs/websockets';
 import { UseGuards } from '@nestjs/common';
 import { SocketGuard } from './socket.guard';
 import { Socket } from 'socket.io';
@@ -10,14 +10,38 @@ import { ClientService } from '../api/client/client.service';
 import { DescriptorDTO } from 'shared/dto/signaling/descriptor.dto';
 
 @WebSocketGateway()
-export class SignalingGateway {
+export class SignalingGateway implements OnGatewayConnection {
 
   constructor(
+    private readonly authService: AuthService,
     private readonly clientService: ClientService,
   ) {}
 
+  async handleConnection(socket: Socket) {
+    const { session } = socket.handshake.query
+    const token = sessionTokenFromSocket(socket)
+
+    if (isNone(token)) {
+      socket.emit('exception', 'Forbidden: No authentication provided')
+      return socket.disconnect()
+    }
+
+    const consumer = await this.authService.validate(token.v)
+
+    if (isNone(consumer)) {
+      socket.emit('exception', 'Forbidden')
+      return socket.disconnect()
+    }
+
+    (socket as AuthSocket).consumer = consumer.v
+
+    if (session) {
+      const room = `${session}_${ isUser(consumer.v) ? 'user' : consumer.v.v.kind }`
+      socket.join(`${session}_clients`)
+    }
+  }
+
   @SubscribeMessage('events')
-  @UseGuards(SocketGuard)
   handleMessage(socket: Socket, payload: any): string {
     return payload;
   }
@@ -25,7 +49,6 @@ export class SignalingGateway {
   // descriptor
   // will set/update the client's descriptor
   @SubscribeMessage('descriptor')
-  @UseGuards(SocketGuard)
   async handleDescriptor(socket: AuthSocket, descriptor: DescriptorDTO): Promise<void> {
     if (isUser(socket.consumer)) {
       throw new WsException('Forbidden')
@@ -46,7 +69,6 @@ export class SignalingGateway {
 
   // TODO: Figure out what to do on candidate
   @SubscribeMessage('candidate')
-  @UseGuards(SocketGuard)
   async handleCandidate(socket: AuthSocket, candidate: any) {
     console.log(candidate)
   }
