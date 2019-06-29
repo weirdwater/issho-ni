@@ -14,15 +14,15 @@ export interface Right<a> {
 
 export type Either<a, b> = Left<a> | Right<b>
 
-export type Maybe<a>  = Either<Unit, a>
+export type Maybe<a> = Either<Unit, a>
 
-export type None = Left<Unit>
+export interface None extends Left<Unit> {}
 
-export type Some<a> = Right<a>
+export interface Some<a> extends Right<a> {}
 
 export type Fun<a, b> = (_: a) => b
 
-export type Action<a> = Fun<a, a>
+export interface Action<a> extends Fun<a, a> {}
 
 export const left = <a>(_: a): Left<a> => ({ k: 'l', v: _ })
 

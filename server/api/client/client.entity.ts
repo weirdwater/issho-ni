@@ -1,6 +1,6 @@
 import { PrimaryGeneratedColumn, Column, ManyToMany, Entity, CreateDateColumn } from 'typeorm'
 import { Session } from '../session/session.entity'
-import { ClientType, clientTypes } from '../../../types';
+import { ClientType, clientTypes } from '../../../shared/types';
 import { Exclude } from 'class-transformer';
 
 @Entity()

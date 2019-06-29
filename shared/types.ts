@@ -1,5 +1,5 @@
 
-export const clientTypes = ['source', 'presenter'] as const
+export const clientTypes: ReadonlyArray<string> = ['source', 'presenter']
 
 export type ClientType = typeof clientTypes[number]
 

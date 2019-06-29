@@ -1,4 +1,4 @@
-import { ClientType, clientTypes } from '../../types'
+import { ClientType, clientTypes } from '../types'
 import { IsNotEmpty, IsUUID, IsIn } from 'class-validator';
 
 export class RegisterClientResponseDTO {
