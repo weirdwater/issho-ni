@@ -31,6 +31,7 @@ export interface ViewfinderScreenState {
   availableDevices: Maybe<MediaDeviceInfo[]>
   currentDeviceId: Maybe<string>
   stream: Maybe<MediaStream>
+  peerConnection: RTCPeerConnection
   socket: 'disconnected' | 'connected'
 }
 
@@ -43,6 +44,7 @@ export const initialViewfinderState = (s: PermissionScreenState): ViewfinderScre
   availableDevices: none(),
   currentDeviceId: none(),
   stream: none(),
+  peerConnection: new RTCPeerConnection(),
   socket: 'disconnected',
 })
 

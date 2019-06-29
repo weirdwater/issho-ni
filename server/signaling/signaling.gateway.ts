@@ -7,12 +7,12 @@ import { sessionTokenFromSocket, AuthSocket } from './signaling.helper';
 import { isNone, Maybe } from '../../shared/fun';
 import { isUser, Consumer } from '../api/auth/auth.helpers';
 import { ClientService } from '../api/client/client.service';
+import { DescriptorDTO } from 'shared/dto/signaling/descriptor.dto';
 
 @WebSocketGateway()
 export class SignalingGateway {
 
   constructor(
-    private readonly authService: AuthService,
     private readonly clientService: ClientService,
   ) {}
 
@@ -26,12 +26,12 @@ export class SignalingGateway {
   // will set/update the client's descriptor
   @SubscribeMessage('descriptor')
   @UseGuards(SocketGuard)
-  async handleDescriptor(socket: AuthSocket, payload: string): Promise<WsResponse<string>> {
+  async handleDescriptor(socket: AuthSocket, payload: DescriptorDTO): Promise<WsResponse<string>> {
     if (isUser(socket.consumer)) {
       throw new WsException('Forbidden')
     }
 
-    const client = { ...socket.consumer.v, descriptor: payload }
+    const client = { ...socket.consumer.v, descriptor: payload.sdp }
 
     try {
       await this.clientService.save(client)

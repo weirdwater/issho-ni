@@ -1,12 +1,15 @@
 import * as React from 'react'
 import { StateUpdater, ClientCredentials } from '../../shared/types';
 import { StreamingAppState } from '../streamingApp';
-import { Maybe, isSome, isNone, some, none, Some } from '../../../shared/fun';
+import { Maybe, isSome, isNone, some, none, Some, Action } from '../../../shared/fun';
 import { LoadingPage } from './loadingPage';
 import * as styles from './viewfinderScreen.scss'
 import { Page } from '../components/page';
 import { bearerToken } from '../../shared/headers';
 import io from 'socket.io-client'
+import { UnsupportedSDPTypeException } from '../../shared/socketExceptions/UnsupportedSDPTypeException';
+import { SocketException } from '../../shared/socketExceptions/socketException';
+import { SocketState } from '../types';
 
 const constraints = (deviceId: string): MediaStreamConstraints => ({
   audio: false,
@@ -20,7 +23,7 @@ export interface ViewfinderScreenProps {
   availableDevices: Maybe<MediaDeviceInfo[]>
   currentDeviceId: Maybe<string>
   stream: Maybe<MediaStream>
-  socket: 'connected' | 'disconnected'
+  socket: SocketState
   credentials: Some<ClientCredentials>
 }
 
@@ -30,9 +33,17 @@ const DeviceOption = (props: { device: MediaDeviceInfo}) => (
   </option>
 )
 
+const setSocketStatus = (socket: SocketState): Action<StreamingAppState> => s => s.screen === 'viewfinder' ? { ...s, socket } : s
+
 export class ViewfinderScreen extends React.Component<ViewfinderScreenProps, {}> {
   private video = React.createRef<HTMLVideoElement>()
-  private socket: SocketIOClient.Socket;
+  private socket: SocketIOClient.Socket
+  private peerConnection: RTCPeerConnection
+
+  constructor(props: ViewfinderScreenProps) {
+    super(props)
+    this.peerConnection = new RTCPeerConnection()
+  }
 
   componentDidMount() {
     navigator.mediaDevices.enumerateDevices()
@@ -45,6 +56,18 @@ export class ViewfinderScreen extends React.Component<ViewfinderScreenProps, {}>
         } : s)
       })
 
+    this.peerConnection.onicecandidate = c => console.log(c)
+
+    this.peerConnection.onnegotiationneeded = async () => {
+      try {
+        console.log('sending local descriptor')
+        await this.peerConnection.setLocalDescription(await this.peerConnection.createOffer())
+        this.socket.emit('descriptor', this.peerConnection.localDescription)
+      } catch (e) {
+        console.error(e)
+      }
+    }
+
     if (isSome(this.props.credentials.v.sessionToken)) {
       this.socket = io(`/`, {
         transportOptions: {
@@ -54,14 +77,25 @@ export class ViewfinderScreen extends React.Component<ViewfinderScreenProps, {}>
         },
       })
 
-      this.socket.on('connect', () => {
-        this.props.updateState(s => s.screen === 'viewfinder' ? { ...s, socket: 'connected' } : s)
+      this.socket.on('connect', () => this.props.updateState(setSocketStatus('connected')))
+      this.socket.on('disconnect', () => this.props.updateState(setSocketStatus('disconnected')))
+      this.socket.on('exception', (data: any) => { throw new SocketException(data) })
+
+      this.socket.on('descriptor', async (description: RTCSessionDescription) => {
+        console.log('descriptor', description)
+        if (description.type !== 'offer' && description.type !== 'answer') {
+          throw new UnsupportedSDPTypeException(`Unsupported SDP type: ${description.type}`)
+        }
+        await this.peerConnection.setRemoteDescription(description)
+        if (description.type === 'offer') {
+          await this.peerConnection.setLocalDescription(await this.peerConnection.createOffer())
+          this.socket.emit('descriptor', this.peerConnection.localDescription)
+        }
       })
-      // tslint:disable-next-line:no-console
-      this.socket.on('exception', (data: any) => console.error('Exception received', data))
-      // tslint:disable-next-line:no-console
-      this.socket.on('disconnect', () => {
-        this.props.updateState(s => s.screen === 'viewfinder' ? { ...s, socket: 'disconnected' } : s)
+
+      this.socket.on('candidate', (candidate: RTCIceCandidate) => {
+        console.log('candidate', candidate)
+        this.peerConnection.addIceCandidate(candidate)
       })
     }
   }
@@ -76,6 +110,7 @@ export class ViewfinderScreen extends React.Component<ViewfinderScreenProps, {}>
 
     if (video && isSome(this.props.stream) && isNone(prevProps.stream)) {
       video.srcObject = this.props.stream.v
+      this.props.stream.v.getTracks().forEach(t => this.peerConnection.addTrack(t))
     }
 
     if (isNone(this.props.currentDeviceId)) {
