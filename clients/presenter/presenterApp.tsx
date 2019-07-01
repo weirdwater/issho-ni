@@ -1,21 +1,21 @@
-import * as React from 'react'
-import { Maybe, none, isSome, some, Action } from '../../shared/fun';
-import { SessionCredentials } from './types';
-import { ClientCredentials } from '../shared/types';
-import { isNone } from '../../shared/fun';
+import * as React from 'react';
+import io from 'socket.io-client';
+import { SourceDTO, CandidateDTO, DescriptorDTO } from '../../shared/dto';
+import { Action, isNone, isSome, Maybe, none } from '../../shared/fun';
 import { ClientAuthenticationHandler } from '../shared/clientAuthenticationHandler';
-import { SocketState } from '../streaming-client/types';
 import { bearerToken } from '../shared/headers';
-import { updateSocketStatus, toFormattedJSON } from '../shared/helpers';
+import { toFormattedJSON, updateSocketStatus } from '../shared/helpers';
 import { SocketException } from '../shared/socketExceptions/socketException';
-import io from 'socket.io-client'
+import { ClientCredentials } from '../shared/types';
+import { SocketState } from '../streaming-client/types';
+import { SessionCredentials } from './types';
 
 export interface PresenterAppState {
   credentials: Maybe<ClientCredentials>
   sessionCredentials: Maybe<SessionCredentials>
   socket: SocketState
-  descriptors: any[]
-  candidates: any[]
+  descriptors: Array<SourceDTO<DescriptorDTO>>
+  candidates: Array<SourceDTO<CandidateDTO>>
 }
 
 export class PresenterApp extends React.Component<{}, PresenterAppState> {
@@ -34,6 +34,8 @@ export class PresenterApp extends React.Component<{}, PresenterAppState> {
     }
 
     this.updateState = this.updateState.bind(this)
+    this.handleDescriptor = this.handleDescriptor.bind(this)
+    this.handleCandidate = this.handleCandidate.bind(this)
 
     this.authHandler = new ClientAuthenticationHandler<PresenterAppState>('presenter', this.updateState)
   }
@@ -45,6 +47,16 @@ export class PresenterApp extends React.Component<{}, PresenterAppState> {
   componentDidMount() {
     // tslint:disable-next-line:no-console
     this.authHandler.init().catch(console.log)
+  }
+
+  handleDescriptor(descriptor: SourceDTO<DescriptorDTO>): void {
+    console.log('received descriptor', descriptor)
+    this.setState(s => ({...s, descriptors: [...s.descriptors, descriptor] }))
+  }
+
+  handleCandidate(candidate: SourceDTO<CandidateDTO>): void {
+    console.log('received candidate', candidate)
+    this.setState(s => ({...s, candidates: [...s.candidates, candidate] }))
   }
 
   componentDidUpdate(prevProps: {}, prevState: PresenterAppState) {
@@ -65,9 +77,8 @@ export class PresenterApp extends React.Component<{}, PresenterAppState> {
       this.socket.on('connect', () => this.updateState(updateSocketStatus<PresenterAppState>('connected')))
       this.socket.on('disconnect', () => this.updateState(updateSocketStatus<PresenterAppState>('disconnected')))
       this.socket.on('exception', (data: any) => { throw new SocketException(data) })
-
-      this.socket.on('descriptor', (data: any) => this.setState(s => ({...s, descriptors: [...this.state.descriptors, data] })))
-      this.socket.on('candidate', (data: any) => this.setState(s => ({...s, candidates: [...this.state.descriptors, data] })))
+      this.socket.on('descriptor', this.handleDescriptor)
+      this.socket.on('candidate', this.handleCandidate)
     }
   }
 

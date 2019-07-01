@@ -1,5 +1,5 @@
 import { OnGatewayConnection, OnGatewayDisconnect, SubscribeMessage, WebSocketGateway, WebSocketServer, WsException } from '@nestjs/websockets';
-import { DescriptorDTO } from 'shared/dto/signaling/descriptor.dto';
+import { DescriptorDTO, CandidateDTO, SourceDTO } from 'shared/dto';
 import { Server, Socket } from 'socket.io';
 import { isNone } from '../../shared/fun';
 import { isClient, isUser } from '../api/auth/auth.helpers';
@@ -63,38 +63,32 @@ export class SignalingGateway implements OnGatewayConnection, OnGatewayDisconnec
     }
     const { session } = socket.handshake.query
     const clientType = socket.consumer.v.kind
+    const room = clientType === 'source' ? makeRoom('presenter')(session) : makeRoom('source')(session)
 
-    if (clientType === 'source') {
-      const presenterRoom = makeRoom('presenter')(session)
-      socket.to(presenterRoom).emit('descriptor', { clientId: socket.consumer.v.id, descriptor })
-      return
-    }
+    const sourceDTO = new SourceDTO<DescriptorDTO>()
+    sourceDTO.clientId = socket.consumer.v.id
+    sourceDTO.data = descriptor
 
-    if (clientType === 'presenter') {
-      const sourceRoom = makeRoom('source')(session)
-      socket.to(sourceRoom).emit('descriptor', descriptor)
-      return
-    }
+    const data = clientType === 'source' ? sourceDTO : descriptor
+
+    socket.to(room).emit('descriptor', data)
   }
 
   @SubscribeMessage('candidate')
-  handleCandidate(socket: AuthSocket, candidate: any): void {
+  handleCandidate(socket: AuthSocket, candidate: CandidateDTO): void {
     if (isUser(socket.consumer)) {
       throw new WsException('Forbidden')
     }
     const { session } = socket.handshake.query
     const clientType = socket.consumer.v.kind
+    const room = clientType === 'source' ? makeRoom('presenter')(session) : makeRoom('source')(session)
 
-    if (clientType === 'source') {
-      const presenterRoom = makeRoom('presenter')(session)
-      socket.to(presenterRoom).emit('candidate', { clientId: socket.consumer.v.id, candidate })
-      return
-    }
+    const sourceDTO = new SourceDTO<CandidateDTO>()
+    sourceDTO.clientId = socket.consumer.v.id
+    sourceDTO.data = candidate
 
-    if (clientType === 'presenter') {
-      const sourceRoom = makeRoom('source')(session)
-      socket.to(sourceRoom).emit('candidate', candidate)
-      return
-    }
+    const data = clientType === 'source' ? sourceDTO : candidate
+
+    socket.to(room).emit('candidate', data)
   }
 }

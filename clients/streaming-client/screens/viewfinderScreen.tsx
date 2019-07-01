@@ -81,7 +81,8 @@ export class ViewfinderScreen extends React.Component<ViewfinderScreenProps, {}>
         s => s.screen === 'viewfinder' ? updateSocketStatus<ViewfinderScreenState>('connected')(s) : s))
       this.socket.on('disconnect', () => this.props.updateState(
         s => s.screen === 'viewfinder' ? updateSocketStatus<ViewfinderScreenState>('disconnected')(s) : s))
-      this.socket.on('exception', (data: any) => { throw new SocketException(data) })
+      // tslint:disable-next-line:no-console
+      this.socket.on('exception', (data: any) => { console.error(data) })
 
       this.socket.on('descriptor', async (description: RTCSessionDescription) => {
         console.log('descriptor', description)
