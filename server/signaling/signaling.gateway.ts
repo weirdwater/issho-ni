@@ -1,12 +1,11 @@
-import { OnGatewayConnection, SubscribeMessage, WebSocketGateway, WebSocketServer, WsException, OnGatewayDisconnect } from '@nestjs/websockets';
+import { OnGatewayConnection, OnGatewayDisconnect, SubscribeMessage, WebSocketGateway, WebSocketServer, WsException } from '@nestjs/websockets';
 import { DescriptorDTO } from 'shared/dto/signaling/descriptor.dto';
 import { Server, Socket } from 'socket.io';
 import { isNone } from '../../shared/fun';
-import { isUser, isClient } from '../api/auth/auth.helpers';
+import { isClient, isUser } from '../api/auth/auth.helpers';
 import { AuthService } from '../api/auth/auth.service';
 import { ClientService } from '../api/client/client.service';
-import { AuthSocket, sessionTokenFromSocket } from './signaling.helper';
-import { OnApplicationShutdown } from '@nestjs/common';
+import { AuthSocket, makeRoom, roomFromConsumer, sessionTokenFromSocket } from './signaling.helper';
 
 @WebSocketGateway()
 export class SignalingGateway implements OnGatewayConnection, OnGatewayDisconnect {
@@ -42,7 +41,7 @@ export class SignalingGateway implements OnGatewayConnection, OnGatewayDisconnec
     (socket as AuthSocket).consumer = consumer.v
 
     if (session) {
-      const room = `${session}_${ isUser(consumer.v) ? 'user' : consumer.v.v.kind }`
+      const room = roomFromConsumer(consumer.v)(session)
       socket.join(room)
     }
   }
@@ -57,42 +56,45 @@ export class SignalingGateway implements OnGatewayConnection, OnGatewayDisconnec
     }
   }
 
-  @SubscribeMessage('events')
-  handleMessage(socket: Socket, payload: any): string {
-    return payload;
-  }
-
-  // descriptor
-  // will set/update the client's descriptor
   @SubscribeMessage('descriptor')
-  async handleDescriptor(socket: AuthSocket, descriptor: DescriptorDTO): Promise<void> {
+  handleDescriptor(socket: AuthSocket, descriptor: DescriptorDTO): void {
     if (isUser(socket.consumer)) {
       throw new WsException('Forbidden')
     }
+    const { session } = socket.handshake.query
+    const clientType = socket.consumer.v.kind
 
-    const client = { ...socket.consumer.v, descriptor: descriptor.sdp }
-
-    try {
-      await this.clientService.save(client)
-      // TODO: Send updated descriptor to relevant peers
-    } catch (e) {
-      // tslint:disable-next-line:no-console
-      console.error(e)
-      throw new WsException('Something went wrong saving the descriptor')
+    if (clientType === 'source') {
+      const presenterRoom = makeRoom('presenter')(session)
+      socket.to(presenterRoom).emit('descriptor', { clientId: socket.consumer.v.id, descriptor })
+      return
     }
 
+    if (clientType === 'presenter') {
+      const sourceRoom = makeRoom('source')(session)
+      socket.to(sourceRoom).emit('descriptor', descriptor)
+      return
+    }
   }
 
-  // TODO: Figure out what to do on candidate
   @SubscribeMessage('candidate')
-  async handleCandidate(socket: AuthSocket, candidate: any) {
-    // console.log(candidate)
+  handleCandidate(socket: AuthSocket, candidate: any): void {
+    if (isUser(socket.consumer)) {
+      throw new WsException('Forbidden')
+    }
+    const { session } = socket.handshake.query
+    const clientType = socket.consumer.v.kind
+
+    if (clientType === 'source') {
+      const presenterRoom = makeRoom('presenter')(session)
+      socket.to(presenterRoom).emit('candidate', { clientId: socket.consumer.v.id, candidate })
+      return
+    }
+
+    if (clientType === 'presenter') {
+      const sourceRoom = makeRoom('source')(session)
+      socket.to(sourceRoom).emit('candidate', candidate)
+      return
+    }
   }
-
-  // presenterDescriptor
-  // will return the presenter's descriptor
-
-  // sourceDescriptors
-  // will return the session's source client descriptors
-
 }
