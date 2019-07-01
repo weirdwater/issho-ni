@@ -1,6 +1,6 @@
 import * as React from 'react'
 import { StateUpdater, ClientCredentials } from '../../shared/types';
-import { StreamingAppState } from '../streamingApp';
+import { StreamingAppState, ViewfinderScreenState } from '../streamingApp';
 import { Maybe, isSome, isNone, some, none, Some, Action, AsyncLoaded } from '../../../shared/fun';
 import { LoadingPage } from './loadingPage';
 import * as styles from './viewfinderScreen.scss'
@@ -11,6 +11,7 @@ import { UnsupportedSDPTypeException } from '../../shared/socketExceptions/Unsup
 import { SocketException } from '../../shared/socketExceptions/socketException';
 import { SocketState } from '../types';
 import { JoinSessionDTO } from '../../../shared/dto';
+import { updateSocketStatus } from '../../shared/helpers';
 
 const constraints = (deviceId: string): MediaStreamConstraints => ({
   audio: false,
@@ -34,8 +35,6 @@ const DeviceOption = (props: { device: MediaDeviceInfo}) => (
     { props.device.label || 'unlabeled device' }
   </option>
 )
-
-const setSocketStatus = (socket: SocketState): Action<StreamingAppState> => s => s.screen === 'viewfinder' ? { ...s, socket } : s
 
 export class ViewfinderScreen extends React.Component<ViewfinderScreenProps, {}> {
   private video = React.createRef<HTMLVideoElement>()
@@ -78,8 +77,10 @@ export class ViewfinderScreen extends React.Component<ViewfinderScreenProps, {}>
         },
       })
 
-      this.socket.on('connect', () => this.props.updateState(setSocketStatus('connected')))
-      this.socket.on('disconnect', () => this.props.updateState(setSocketStatus('disconnected')))
+      this.socket.on('connect', () => this.props.updateState(
+        s => s.screen === 'viewfinder' ? updateSocketStatus<ViewfinderScreenState>('connected')(s) : s))
+      this.socket.on('disconnect', () => this.props.updateState(
+        s => s.screen === 'viewfinder' ? updateSocketStatus<ViewfinderScreenState>('disconnected')(s) : s))
       this.socket.on('exception', (data: any) => { throw new SocketException(data) })
 
       this.socket.on('descriptor', async (description: RTCSessionDescription) => {
