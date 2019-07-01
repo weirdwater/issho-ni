@@ -6,100 +6,107 @@ import { NoSessionTokenSetException, ApiException } from './apiExceptions';
 import { authenticatedHeaders, baseHeaders } from './headers';
 import { ClientCredentials, ClientType } from './types';
 import { UnauthorizedException } from './apiExceptions/unauthorizedException';
+import { string } from 'joi';
 
-const ClientApi = (kind: ClientType) => {
-  const idCookie = `${kind}_client_id`
-  const keyCookie = `${kind}_client_key`
-  const sessionCookie = `${kind}_session_token`
+export class ClientApi {
+  private readonly kind: ClientType
+  private readonly idCookie: string
+  private readonly keyCookie: string
+  private readonly sessionCookie: string
 
-  const saveCredentials = (c: ClientCredentials) => {
-    Cookie.set(idCookie, c.id)
-    Cookie.set(keyCookie, c.key)
+  constructor(kind: ClientType) {
+    this.kind = kind
+    this.idCookie = `${kind}_client_id`
+    this.keyCookie = `${kind}_client_key`
+    this.sessionCookie = `${kind}_session_token`
   }
 
-  const getSessionToken = (): Maybe<string> => {
-    const c = Cookie.get(sessionCookie)
+  private saveCredentials(c: ClientCredentials): void {
+    Cookie.set(this.idCookie, c.id)
+    Cookie.set(this.keyCookie, c.key)
+  }
+
+  private saveSessionToken = (t: string) => {
+    Cookie.set(this.sessionCookie, t)
+  }
+
+  private loadSessionToken(): Maybe<string> {
+    const c = Cookie.get(this.sessionCookie)
     return c !== undefined ? some(c) : none()
   }
 
-  const saveSessionToken = (t: string) => {
-    Cookie.set(sessionCookie, t)
+  public loadCredentials(): Maybe<ClientCredentials> {
+    const id = Cookie.get(this.idCookie)
+    const key = Cookie.get(this.keyCookie)
+    const sessionToken = this.loadSessionToken()
+
+    if (id !== undefined && key !== undefined) {
+      return some({ kind: this.kind, id, key, sessionToken })
+    }
+
+    return none()
   }
 
-  return {
-    loadCredentials: (): Maybe<ClientCredentials> => {
-      const id = Cookie.get(idCookie)
-      const key = Cookie.get(keyCookie)
-      const sessionToken = getSessionToken()
+  public clearCredentials(): void {
+    Cookie.remove(this.idCookie)
+    Cookie.remove(this.keyCookie)
+    Cookie.remove(this.sessionCookie)
+  }
 
-      if (id !== undefined && key !== undefined) {
-        return some({ id, key, kind, sessionToken })
-      }
+  public async getClient(c: ClientCredentials): Promise<ClientDTO> {
+    if (isNone(c.sessionToken)) {
+      throw new NoSessionTokenSetException()
+    }
+    const res = await fetch(`api/client/${c.id}`, {
+      headers: authenticatedHeaders(c.sessionToken.v),
+    })
+    if (res.status === 401) {
+      throw new UnauthorizedException()
+    }
+    if (!res.ok) {
+      throw new ApiException(res.statusText)
+    }
+    return res.json()
+  }
 
-      return none()
-    },
-    clearCredentials: () => {
-      Cookie.remove(idCookie)
-      Cookie.remove(keyCookie)
-      Cookie.remove(sessionCookie)
-    },
-    getClient: async (c: ClientCredentials): Promise<ClientDTO> => {
-      if (isNone(c.sessionToken)) {
-        throw new NoSessionTokenSetException()
-      }
-      const res = await fetch(`api/client/${c.id}`, {
-        headers: authenticatedHeaders(c.sessionToken.v),
-      })
-      if (res.status === 401) {
-        throw new UnauthorizedException()
-      }
-      if (!res.ok) {
-        throw new ApiException(res.statusText)
-      }
-      return res.json()
-    },
-    authenticate: async (c: ClientCredentials): Promise<string> => {
-      const dto: AuthenticateClientDTO = { id: c.id, key: c.key}
-      const res = await fetch('api/auth/client', {
-        body: JSON.stringify(dto),
+  public async authenticate(c: ClientCredentials): Promise<string> {
+    const dto: AuthenticateClientDTO = { id: c.id, key: c.key}
+    const res = await fetch('api/auth/client', {
+      body: JSON.stringify(dto),
+      method: 'POST',
+      headers: baseHeaders,
+    })
+
+    if (res.status === 401) {
+      throw new UnauthorizedException('Could not authenticate client')
+    }
+
+    if (res.status !== 201) {
+      throw new ApiException(`Could not authenticate client: ${res.statusText}`)
+    }
+
+    const token = await res.text()
+
+    this.saveSessionToken(token)
+    return token
+  }
+
+  public register(): Promise<ClientCredentials> {
+    return new Promise((resolve, reject) => {
+      const clientRequest = { id: uuid(), kind: this.kind }
+
+      fetch('/api/client/register', {
+        body: JSON.stringify(clientRequest),
         method: 'POST',
         headers: baseHeaders,
       })
-
-      if (res.status === 401) {
-        throw new UnauthorizedException('Could not authenticate client')
-      }
-
-      if (res.status !== 201) {
-        throw new ApiException(`Could not authenticate client: ${res.statusText}`)
-      }
-
-      const token = await res.text()
-
-      saveSessionToken(token)
-      return token
-    },
-    register: (): Promise<ClientCredentials> => new Promise(
-      (resolve, reject) => {
-        const clientRequest = { id: uuid(), kind }
-
-        fetch('/api/client/register', {
-          body: JSON.stringify(clientRequest),
-          method: 'POST',
-          headers: baseHeaders,
+        .then(res => res.json())
+        .then(o => ({...o, sessionToken: none()} as ClientCredentials))
+        .then(c => {
+            this.saveCredentials(c)
+            resolve(c)
         })
-          .then(res => res.json())
-          .then(o => ({...o, sessionToken: none()} as ClientCredentials))
-          .then(c => {
-              saveCredentials(c)
-              resolve(c)
-          })
-          .catch(reject)
-      },
-    ),
+        .catch(reject)
+    })
   }
 }
-
-export const sourceClient = ClientApi('source')
-
-export const preseterClient = ClientApi('presenter')

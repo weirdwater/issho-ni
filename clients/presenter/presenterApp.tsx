@@ -1,44 +1,42 @@
 import * as React from 'react'
-import { Maybe, none, isSome, some } from '../../shared/fun';
+import { Maybe, none, isSome, some, Action } from '../../shared/fun';
 import { SessionCredentials } from './types';
 import { ClientCredentials } from '../shared/types';
-import { preseterClient } from '../shared/clientApi';
 import { isNone } from '../../shared/fun';
+import { ClientAuthenticationHandler } from '../shared/clientAuthenticationHandler';
 
 export interface PresenterAppState {
-  client: Maybe<ClientCredentials>
+  credentials: Maybe<ClientCredentials>
   sessionCredentials: Maybe<SessionCredentials>
 }
 
 export class PresenterApp extends React.Component<{}, PresenterAppState> {
+  private authHandler: ClientAuthenticationHandler<PresenterAppState>
 
   constructor(props: {}) {
     super(props)
 
     this.state = {
-      client: none(),
+      credentials: none(),
       sessionCredentials: none(),
     }
+
+    this.updateState = this.updateState.bind(this)
+
+    this.authHandler = new ClientAuthenticationHandler<PresenterAppState>('presenter', this.updateState)
+  }
+
+  updateState(a: Action<PresenterAppState>, callback?: () => void) {
+    this.setState(s => a(s), callback)
   }
 
   componentDidMount() {
-    const credentials = preseterClient.loadCredentials()
-    if (isSome(credentials)) {
-      this.setState(s => ({...s, client: credentials}))
-    } else {
-      preseterClient.register()
-        .then(c => this.setState(s => ({...s, client: some(c)})))
-        // tslint:disable-next-line:no-console
-        .catch(console.error)
-    }
+    // tslint:disable-next-line:no-console
+    this.authHandler.init().catch(console.log)
   }
 
   componentDidUpdate(prevProps: {}, prevState: PresenterAppState) {
-    if (isSome(this.state.client) && isNone(prevState.client)) {
-      preseterClient.authenticate(this.state.client.v)
-        // tslint:disable-next-line:no-console
-        .then(() => console.log('Authenticated!'))
-    }
+    this.authHandler.onUpdate(prevState.credentials, this.state.credentials)
   }
 
   render() {
@@ -46,7 +44,7 @@ export class PresenterApp extends React.Component<{}, PresenterAppState> {
       <h1>Presentation</h1>
 
       <pre>
-        { isSome(this.state.client) ? JSON.stringify(this.state.client, null, 2) : 'no client credentials set'}
+        { isSome(this.state.credentials) ? JSON.stringify(this.state.credentials, null, 2) : 'no client credentials set'}
       </pre>
       <pre>
         { isSome(this.state.sessionCredentials) ? JSON.stringify(this.state.sessionCredentials, null, 2) : 'no session credentials set'}
