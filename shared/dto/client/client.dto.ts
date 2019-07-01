@@ -11,8 +11,6 @@ export class ClientDTO {
   @IsNotEmpty()
   kind: ClientType
 
-  descriptor: string
-
   @IsDate()
   created: Date
 

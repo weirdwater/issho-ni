@@ -2,13 +2,14 @@ import { OnGatewayConnection, SubscribeMessage, WebSocketGateway, WebSocketServe
 import { DescriptorDTO } from 'shared/dto/signaling/descriptor.dto';
 import { Server, Socket } from 'socket.io';
 import { isNone } from '../../shared/fun';
-import { isUser } from '../api/auth/auth.helpers';
+import { isUser, isClient } from '../api/auth/auth.helpers';
 import { AuthService } from '../api/auth/auth.service';
 import { ClientService } from '../api/client/client.service';
 import { AuthSocket, sessionTokenFromSocket } from './signaling.helper';
+import { OnApplicationShutdown } from '@nestjs/common';
 
 @WebSocketGateway()
-export class SignalingGateway implements OnGatewayConnection {
+export class SignalingGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @WebSocketServer()
   server: Server;
 
@@ -33,11 +34,26 @@ export class SignalingGateway implements OnGatewayConnection {
       return socket.disconnect()
     }
 
+    if (isClient(consumer.v)) {
+      consumer.v.v.socket = socket.id
+      this.clientService.save(consumer.v.v)
+    }
+
     (socket as AuthSocket).consumer = consumer.v
 
     if (session) {
       const room = `${session}_${ isUser(consumer.v) ? 'user' : consumer.v.v.kind }`
       socket.join(room)
+    }
+  }
+
+  handleDisconnect(socket: Socket) {
+    if ((socket as AuthSocket).consumer) {
+      const { consumer } = socket as AuthSocket
+      if (isClient(consumer)) {
+        consumer.v.socket = null
+        this.clientService.save(consumer.v)
+      }
     }
   }
 

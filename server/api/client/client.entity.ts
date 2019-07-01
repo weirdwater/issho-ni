@@ -21,7 +21,7 @@ export class Client {
   kind: ClientType
 
   @Column({ nullable: true })
-  descriptor: string
+  socket: string
 
   @ManyToMany(type => Session, session => session.clients)
   sessions: Session[]
