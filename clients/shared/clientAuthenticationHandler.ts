@@ -22,13 +22,12 @@ export class ClientAuthenticationHandler<a extends AuthClientState> {
 
   public async init(): Promise<void> {
     const credentials = this.api.loadCredentials()
-
-    if (isNone(credentials)) {
-      const c = await this.api.register().catch(err => { throw err })
-      this.updateState(s => ({...s, credentials: some(c)}))
+    if (isSome(credentials)) {
+      return this.updateState(s => ({...s, credentials}))
     }
 
-    this.updateState(s => ({...s, credentials}))
+    const c = await this.api.register().catch(err => { throw err })
+    return this.updateState(s => ({...s, credentials: some(c)}))
   }
 
   public onUpdate(c0: Maybe<ClientCredentials>, c1: Maybe<ClientCredentials>): void {
