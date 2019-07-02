@@ -6,8 +6,13 @@ import { isClient, isUser } from '../api/auth/auth.helpers';
 import { AuthService } from '../api/auth/auth.service';
 import { ClientService } from '../api/client/client.service';
 import { AuthSocket, makeRoom, roomFromConsumer, sessionTokenFromSocket } from './signaling.helper';
+import { RavenInterceptor } from 'nest-raven';
+import { UseInterceptors } from '@nestjs/common';
 
 @WebSocketGateway()
+@UseInterceptors(new RavenInterceptor({
+  context: 'Ws',
+} as any))
 export class SignalingGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @WebSocketServer()
   server: Server;

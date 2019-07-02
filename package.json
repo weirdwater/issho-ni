@@ -37,6 +37,7 @@
     "hbs": "^4.0.4",
     "joi": "^14.3.1",
     "js-cookie": "^2.2.0",
+    "nest-raven": "^4.0.0",
     "passport": "^0.4.0",
     "passport-http-bearer": "^1.0.1",
     "pg": "^7.11.0",
