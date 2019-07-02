@@ -1,17 +1,16 @@
-import * as React from 'react'
-import { StateUpdater, ClientCredentials } from '../../shared/types';
-import { StreamingAppState, ViewfinderScreenState } from '../streamingApp';
-import { Maybe, isSome, isNone, some, none, Some, Action, AsyncLoaded } from '../../../shared/fun';
-import { LoadingPage } from './loadingPage';
-import * as styles from './viewfinderScreen.scss'
-import { Page } from '../components/page';
-import { bearerToken } from '../../shared/headers';
-import io from 'socket.io-client'
-import { UnsupportedSDPTypeException } from '../../shared/socketExceptions/UnsupportedSDPTypeException';
-import { SocketException } from '../../shared/socketExceptions/socketException';
-import { SocketState } from '../types';
+import * as React from 'react';
+import io from 'socket.io-client';
 import { JoinSessionDTO } from '../../../shared/dto';
+import { AsyncLoaded, isNone, isSome, Maybe, none, some, Some } from '../../../shared/fun';
+import { bearerToken } from '../../shared/headers';
 import { updateSocketStatus } from '../../shared/helpers';
+import { UnsupportedSDPTypeException } from '../../shared/socketExceptions/UnsupportedSDPTypeException';
+import { ClientCredentials, StateUpdater } from '../../shared/types';
+import { Page } from '../components/page';
+import { StreamingAppState, ViewfinderScreenState } from '../streamingApp';
+import { SocketState } from '../types';
+import { LoadingPage } from './loadingPage';
+import * as styles from './viewfinderScreen.scss';
 
 const constraints = (deviceId: string): MediaStreamConstraints => ({
   audio: false,
@@ -108,6 +107,7 @@ export class ViewfinderScreen extends React.Component<ViewfinderScreenProps, {}>
 
   componentWillUnmount() {
     this.socket.close()
+    this.peerConnection.close()
     this.props.updateState(s => s.screen === 'viewfinder' ? { ...s, socket: 'disconnected' } : s)
   }
 
