@@ -1,5 +1,5 @@
 import { OnGatewayConnection, OnGatewayDisconnect, SubscribeMessage, WebSocketGateway, WebSocketServer, WsException } from '@nestjs/websockets';
-import { DescriptorDTO, CandidateDTO, SourceDTO } from 'shared/dto';
+import { DescriptorDTO, CandidateDTO, SourceDTO } from '../../shared/dto';
 import { Server, Socket } from 'socket.io';
 import { isNone } from '../../shared/fun';
 import { isClient, isUser } from '../api/auth/auth.helpers';
