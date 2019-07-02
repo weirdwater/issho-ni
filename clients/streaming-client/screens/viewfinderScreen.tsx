@@ -97,6 +97,9 @@ export class ViewfinderScreen extends React.Component<ViewfinderScreenProps, {}>
       })
 
       this.socket.on('candidate', (candidate: RTCIceCandidate) => {
+        if (!candidate) {
+          return
+        }
         console.log('candidate', candidate)
         this.peerConnection.addIceCandidate(candidate)
       })
