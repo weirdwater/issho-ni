@@ -30,6 +30,7 @@ build=$(date "+%Y%m%d%H%M")
 branch=$(git rev-parse --abbrev-ref HEAD)
 commit=$(git log -n 1 --pretty=format:"%H")
 imageArchive="${project}-${build}.tar"
+release="${project}@${commit}"
 
 cleanup() {
   info "Cleanup"
@@ -41,7 +42,7 @@ if [[ "${BASH_SOURCE[0]}" = "$0" ]]; then
 	trap cleanup EXIT
 
   info "Starting build ${build} for ${project}"
-  docker build --build-arg "BUILD_NUMBER=${build}" --build-arg "GIT_BRANCH=${branch}" --build-arg "GIT_COMMIT=${commit}" -t "${project}:${build}" -t "${project}:latest" .
+  docker build --build-arg "BUILD_NUMBER=${build}" --build-arg "GIT_BRANCH=${branch}" --build-arg "GIT_COMMIT=${commit}" --build-arg "SENTRY_RELEASE=${release}" -t "${project}:${build}" -t "${project}:latest" .
   info "Archiving image for ${project}"
   docker save -o "$imageArchive" "${project}:${build}"
 

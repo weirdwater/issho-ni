@@ -29,6 +29,8 @@ COPY --from=build /usr/src/app/static/       ./dist/static
 ARG BUILD_NUMBER="none"
 ARG GIT_BRANCH="none"
 ARG GIT_COMMIT="none"
+ARG SENTRY_RELEASE
+ENV SENTRY_RELEASE=$SENTRY_RELEASE
 RUN echo "{ \"build\":\"${BUILD_NUMBER}\", \"branch\":\"${GIT_BRANCH}\", \"commit\":\"${GIT_COMMIT}\" }" > ./dist/static/build.json
 
 CMD yarn start:prod

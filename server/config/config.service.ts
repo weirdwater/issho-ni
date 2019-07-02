@@ -25,6 +25,7 @@ export class ConfigService {
       PG_HOST: Joi.string().default('localhost'),
       PG_PORT: Joi.number().default(5432),
       ORM_SYNC: Joi.bool().default(false),
+      SENTRY_DSN: Joi.string().required(),
     });
 
     const { error, value: validatedEnvConfig } = Joi.validate(
