@@ -5,7 +5,7 @@ import { join } from 'path';
 import * as Sentry from '@sentry/node'
 import * as dotenv from 'dotenv'
 import { getEnv } from './config/config.helpers';
-import { isNone, isSome } from 'shared/fun';
+import { isNone, isSome } from '../shared/fun';
 
 dotenv.config()
 const dsn = getEnv('SENTRY_DSN')
