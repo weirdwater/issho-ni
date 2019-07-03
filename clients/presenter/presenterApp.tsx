@@ -9,6 +9,7 @@ import { UnsupportedSDPTypeException } from '../shared/socketExceptions/Unsuppor
 import { ClientCredentials, PeerConnectionState } from '../shared/types';
 import { SocketState } from '../streaming-client/types';
 import { SessionCredentials } from './types';
+import { PeerConnectionMissingException } from '../shared/peerConnectionMissingException';
 
 export interface PresenterAppState {
   credentials: Maybe<ClientCredentials>
@@ -17,25 +18,25 @@ export interface PresenterAppState {
   descriptors: Array<SourceDTO<DescriptorDTO>>
   candidates: Array<SourceDTO<CandidateDTO>>
   streams: MediaStream[]
-  peerState: Maybe<PeerConnectionState>
+  peers: { [clientId: string]: PeerConnectionState }
 }
 
-const updatePeerState = <k extends keyof PeerConnectionState>(key: k) => (pc: RTCPeerConnection): Action<PresenterAppState> => {
+const updatePeerState = (id: string) => <k extends keyof PeerConnectionState>(key: k) => (pc: RTCPeerConnection): Action<PresenterAppState> => {
   const value = pc[key]
   return s => {
-    if (isNone(s.peerState)) {
+    if (!s.peers[id]) {
       return s
     }
-    info('Peerstate update for', key, s.peerState.v[key], '->', value)
-    return  {...s, peerState: some({...s.peerState.v, [key]: value })}
+    info('Peerstate update for', id, key, s.peers[id][key], '->', value)
+    return  {...s, peers: {...s.peers, [id]: { ...s.peers[id], [key]: value}} }
   }
 }
 
 export class PresenterApp extends React.Component<{}, PresenterAppState> {
   private authHandler: ClientAuthenticationHandler<PresenterAppState>
   private socket: SocketIOClient.Socket
-  private peerConnection: RTCPeerConnection
   private video = React.createRef<HTMLVideoElement>()
+  private peers: { [clientId: string]: RTCPeerConnection } = {}
 
   constructor(props: {}) {
     super(props)
@@ -47,7 +48,7 @@ export class PresenterApp extends React.Component<{}, PresenterAppState> {
       descriptors: [],
       candidates: [],
       streams: [],
-      peerState: none(),
+      peers: {},
     }
 
     this.updateState = this.updateState.bind(this)
@@ -55,6 +56,7 @@ export class PresenterApp extends React.Component<{}, PresenterAppState> {
     this.handleCandidate = this.handleCandidate.bind(this)
     this.sendLocalDescription = this.sendLocalDescription.bind(this)
     this.sendCandidate = this.sendCandidate.bind(this)
+    this.peerConnectionInit = this.peerConnectionInit.bind(this)
   }
 
   updateState(a: Action<PresenterAppState>, callback?: () => void) {
@@ -64,55 +66,68 @@ export class PresenterApp extends React.Component<{}, PresenterAppState> {
   componentDidMount() {
     this.authHandler = new ClientAuthenticationHandler<PresenterAppState>('presenter', this.updateState)
     this.authHandler.init().catch(capture)
-
-    this.peerConnection = new RTCPeerConnection()
-    this.peerConnection.onicecandidate = this.sendCandidate
-    this.peerConnection.onnegotiationneeded = async () => {
-      info('negotiation needed')
-      try {
-        const offer = await this.peerConnection.createOffer()
-        this.sendLocalDescription(offer, '4eb9c7a1-f72a-48ff-afa0-432ceaf66b41')
-      } catch (e) {
-        throw e
-      }
-    }
-    this.peerConnection.ontrack = e => {
-      info('track', e)
-      if (!e.streams) {
-        return
-      }
-      if (this.video && this.video.current) {
-        this.video.current.srcObject = e.streams[0]
-      }
-      this.setState(s => ({...s, streams: [...s.streams, ...e.streams]}))
-    }
-    this.peerConnection.oniceconnectionstatechange = () => this.updateState(updatePeerState('iceConnectionState')(this.peerConnection))
-    this.peerConnection.onconnectionstatechange = () => this.updateState(updatePeerState('connectionState')(this.peerConnection))
-    this.peerConnection.onicegatheringstatechange = () => this.updateState(updatePeerState('iceGatheringState')(this.peerConnection))
-    this.peerConnection.onsignalingstatechange = () => this.updateState(updatePeerState('signalingState')(this.peerConnection))
-    this.peerConnection.onstatsended = e => info('on stats ended', e)
-    this.peerConnection.onicecandidateerror = e => capture(e)
-    this.updateState(s => ({...s, peerState: some({
-      connectionState: this.peerConnection.connectionState,
-      iceConnectionState: this.peerConnection.iceConnectionState,
-      iceGatheringState: this.peerConnection.iceGatheringState,
-      signalingState: this.peerConnection.signalingState,
-    }) }))
   }
 
-  sendCandidate(c: RTCPeerConnectionIceEvent) {
-    if (c.candidate) {
-      info('sending candidate')
-      emitCandidate(this.socket)({ target: 'source', sourceClientId: '4eb9c7a1-f72a-48ff-afa0-432ceaf66b41', data: c.candidate})
+  peerConnectionInit(clientId: string) {
+    return new Promise((resolve, reject) => {
+      const pc = new RTCPeerConnection()
+      pc.onicecandidate = this.sendCandidate(clientId)
+      pc.onnegotiationneeded = async () => {
+        info('negotiation needed')
+        try {
+          const offer = await pc.createOffer()
+          this.sendLocalDescription(offer, clientId)
+        } catch (e) {
+          throw e
+        }
+      }
+      pc.ontrack = e => {
+        info('track', e)
+        if (!e.streams) {
+          return
+        }
+        if (this.video && this.video.current) {
+          this.video.current.srcObject = e.streams[0]
+        }
+        this.setState(s => ({...s, streams: [...s.streams, ...e.streams]}))
+      }
+      const ups = updatePeerState(clientId)
+      pc.oniceconnectionstatechange = () => this.updateState(ups('iceConnectionState')(pc))
+      pc.onconnectionstatechange = () => this.updateState(ups('connectionState')(pc))
+      pc.onicegatheringstatechange = () => this.updateState(ups('iceGatheringState')(pc))
+      pc.onsignalingstatechange = () => this.updateState(ups('signalingState')(pc))
+      pc.onstatsended = e => info('on stats ended', e)
+      pc.onicecandidateerror = e => capture(e)
+      this.peers[clientId] = pc
+
+      this.updateState(s => ({...s, peers: {...s.peers, [clientId]: {
+        connectionState: pc.connectionState,
+        iceConnectionState: pc.iceConnectionState,
+        iceGatheringState: pc.iceGatheringState,
+        signalingState: pc.signalingState,
+      } } }), () => resolve())
+    })
+  }
+
+  sendCandidate(clientId: string) {
+    return (c: RTCPeerConnectionIceEvent) => {
+      if (c.candidate) {
+        info('sending candidate')
+        emitCandidate(this.socket)({ target: 'source', sourceClientId: clientId, data: c.candidate})
+      }
     }
   }
 
   async sendLocalDescription(offer: RTCSessionDescriptionInit, sourceClientId: string): Promise<void> {
     try {
       info('sending descriptor')
-      await this.peerConnection.setLocalDescription(offer)
-      if (this.peerConnection.localDescription) {
-        emitDescriptor(this.socket)({ target: 'source', data: this.peerConnection.localDescription, sourceClientId })
+      if (!this.peers[sourceClientId]) {
+        throw new PeerConnectionMissingException(`Peer connection for client with id ${sourceClientId} missing`)
+      }
+      await this.peers[sourceClientId].setLocalDescription(offer)
+      const data = this.peers[sourceClientId].localDescription
+      if (data) {
+        emitDescriptor(this.socket)({ target: 'source', sourceClientId, data })
       }
     } catch (e) {
       capture(e)
@@ -124,9 +139,12 @@ export class PresenterApp extends React.Component<{}, PresenterAppState> {
     if (dto.data.type !== 'offer' && dto.data.type !== 'answer') {
       throw new UnsupportedSDPTypeException(`Unsupported SDP type: ${dto.data.type}`)
     }
-    await this.peerConnection.setRemoteDescription(dto.data)
+    if (!this.peers[dto.sourceClientId]) {
+      await this.peerConnectionInit(dto.sourceClientId)
+    }
+    await this.peers[dto.sourceClientId].setRemoteDescription(dto.data)
     if (dto.data.type === 'offer') {
-      const offer = await this.peerConnection.createAnswer()
+      const offer = await this.peers[dto.sourceClientId].createAnswer()
       this.sendLocalDescription(offer, dto.sourceClientId)
     }
   }
@@ -136,7 +154,10 @@ export class PresenterApp extends React.Component<{}, PresenterAppState> {
     if (!dto.data) {
       return
     }
-    this.peerConnection.addIceCandidate(dto.data)
+    if (!this.peers[dto.sourceClientId]) {
+      throw new PeerConnectionMissingException(`No peer connection found for client with id ${dto.sourceClientId}`)
+    }
+    this.peers[dto.sourceClientId].addIceCandidate(dto.data)
   }
 
   componentDidUpdate(prevProps: {}, prevState: PresenterAppState) {
@@ -160,7 +181,7 @@ export class PresenterApp extends React.Component<{}, PresenterAppState> {
         { isSome(this.state.credentials) ? toFormattedJSON(this.state.credentials) : 'no client credentials set'}
       </pre>
       <pre>
-        { toFormattedJSON(this.state.peerState)}
+        { toFormattedJSON(this.state.peers)}
       </pre>
 
       <video autoPlay playsInline ref={this.video} />
