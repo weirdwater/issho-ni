@@ -44,6 +44,8 @@ export const isSome = isRight
 
 export const isNone = isLeft
 
+export const doEither = <a, b>(e: Either<a, b>) => <c>(f: (_: a) => c, g: (_: b) => c) => isLeft(e) ? f(e.v) : g(e.v)
+
 export interface AsyncLoaded<a> {
   s: 'loaded'
   v: a

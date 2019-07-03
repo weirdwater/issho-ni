@@ -1,7 +1,9 @@
 import * as dotenv from 'dotenv';
 import * as Joi from 'joi';
 import * as fs from 'fs';
-import { Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common'
+import { getEnv } from './config.helpers'
+import { isNone, doEither } from '../../shared/fun'
 
 export interface EnvConfig {
   [key: string]: string;
@@ -26,6 +28,7 @@ export class ConfigService {
       PG_PORT: Joi.number().default(5432),
       ORM_SYNC: Joi.bool().default(false),
       SENTRY_DSN: Joi.string().required(),
+      SENTRY_RELEASE: Joi.string().default(doEither(getEnv('SENTRY_RELEASE'))<string>(_ => 'unreleased', r => r)),
     });
 
     const { error, value: validatedEnvConfig } = Joi.validate(
@@ -60,6 +63,14 @@ export class ConfigService {
 
   get typeOrmSync(): boolean {
     return Boolean(this.envConfig.ORM_SYNC)
+  }
+
+  get sentryDSN(): string {
+    return String(this.envConfig.SENTRY_DSN)
+  }
+
+  get sentryRelease(): string {
+    return String(this.envConfig.SENTRY_RELEASE)
   }
 
 }
