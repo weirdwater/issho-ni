@@ -170,7 +170,8 @@ export class ViewfinderScreen extends React.Component<ViewfinderScreenProps, {}>
     && (isNone(prevProps.stream) || (isNone(prevProps.peerState) || isSome(prevProps.peerState) && prevProps.peerState.v.signalingState !== 'stable')
     )) {
       info('Ready to add tracks')
-      this.props.stream.v.getVideoTracks().forEach(t => this.peerConnection.addTrack(t))
+      const stream = this.props.stream.v
+      this.props.stream.v.getVideoTracks().forEach(t => this.peerConnection.addTrack(t, stream))
     }
 
     if (isNone(this.props.currentDeviceId)) {
