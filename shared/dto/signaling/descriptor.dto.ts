@@ -1,5 +1,5 @@
 
 export class DescriptorDTO {
-  type: 'answer' | 'offer'
+  type: 'answer' | 'offer' | 'pranswer' | 'rollback'
   sdp: string
 }

@@ -1,6 +1,6 @@
 
 export class CandidateDTO {
   candidate: string
-  sdpMLineIndex: number
-  sdpMid: string
+  sdpMLineIndex: number | null
+  sdpMid: string | null
 }

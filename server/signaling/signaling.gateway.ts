@@ -5,7 +5,7 @@ import { isNone } from '../../shared/fun';
 import { isClient, isUser } from '../api/auth/auth.helpers';
 import { AuthService } from '../api/auth/auth.service';
 import { ClientService } from '../api/client/client.service';
-import { AuthSocket, makeRoom, roomFromConsumer, sessionTokenFromSocket } from './signaling.helper';
+import { AuthSocket, makeRoom, roomFromConsumer, sessionTokenFromSocket, presenterRoom } from './signaling.helper';
 import { RavenInterceptor } from 'nest-raven';
 import { UseInterceptors, UseGuards } from '@nestjs/common';
 import { SocketGuard } from './socket.guard';
@@ -64,39 +64,30 @@ export class SignalingGateway implements OnGatewayConnection, OnGatewayDisconnec
 
   @SubscribeMessage('descriptor')
   @UseGuards(SocketGuard)
-  handleDescriptor(socket: AuthSocket, descriptor: DescriptorDTO): void {
+  async handleDescriptor(socket: AuthSocket, data: SourceDTO<DescriptorDTO>): Promise<void> {
     if (isUser(socket.consumer)) {
       throw new WsException('Forbidden')
     }
     const { session } = socket.handshake.query
-    const clientType = socket.consumer.v.kind
-    const room = clientType === 'source' ? makeRoom('presenter')(session) : makeRoom('source')(session)
-
-    const sourceDTO = new SourceDTO<DescriptorDTO>()
-    sourceDTO.clientId = socket.consumer.v.id
-    sourceDTO.data = descriptor
-
-    const data = clientType === 'source' ? sourceDTO : descriptor
-
+    const room = data.target === 'presenter' ? presenterRoom(session) : (await this.clientService.findOne(data.sourceClientId)).socket
+    if (room === undefined) {
+      throw new WsException(`No socket found for the client with id ${data.target}`)
+    }
     socket.to(room).emit('descriptor', data)
   }
 
   @SubscribeMessage('candidate')
   @UseGuards(SocketGuard)
-  handleCandidate(socket: AuthSocket, candidate: CandidateDTO): void {
+  async handleCandidate(socket: AuthSocket, data: SourceDTO<CandidateDTO>): Promise<void> {
     if (isUser(socket.consumer)) {
       throw new WsException('Forbidden')
     }
     const { session } = socket.handshake.query
-    const clientType = socket.consumer.v.kind
-    const room = clientType === 'source' ? makeRoom('presenter')(session) : makeRoom('source')(session)
-
-    const sourceDTO = new SourceDTO<CandidateDTO>()
-    sourceDTO.clientId = socket.consumer.v.id
-    sourceDTO.data = candidate
-
-    const data = clientType === 'source' ? sourceDTO : candidate
-
+    const room = data.target === 'presenter' ? presenterRoom(session) : (await this.clientService.findOne(data.sourceClientId)).socket
+    if (room === undefined) {
+      throw new WsException(`No socket found for the client with id ${data.target}`)
+    }
     socket.to(room).emit('candidate', data)
   }
+
 }

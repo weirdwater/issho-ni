@@ -1,17 +1,14 @@
 import * as React from 'react';
-import io from 'socket.io-client';
-import { SourceDTO, CandidateDTO, DescriptorDTO } from '../../shared/dto';
+import { CandidateDTO, DescriptorDTO, SourceDTO } from '../../shared/dto';
 import { Action, isNone, isSome, Maybe, none, some } from '../../shared/fun';
 import { ClientAuthenticationHandler } from '../shared/clientAuthenticationHandler';
-import { bearerToken } from '../shared/headers';
-import { toFormattedJSON, updateSocketStatus } from '../shared/helpers';
-import { SocketException } from '../shared/socketExceptions/socketException';
+import { toFormattedJSON } from '../shared/helpers';
+import { capture, info } from '../shared/logger';
+import { emitCandidate, emitDescriptor, signalingSocket } from '../shared/signaling';
+import { UnsupportedSDPTypeException } from '../shared/socketExceptions/UnsupportedSDPTypeException';
 import { ClientCredentials, PeerConnectionState } from '../shared/types';
 import { SocketState } from '../streaming-client/types';
 import { SessionCredentials } from './types';
-import { UnsupportedSDPTypeException } from '../shared/socketExceptions/UnsupportedSDPTypeException';
-import { capture, info } from '../shared/logger';
-import { signalingSocket } from '../shared/signaling';
 
 export interface PresenterAppState {
   credentials: Maybe<ClientCredentials>
@@ -74,7 +71,7 @@ export class PresenterApp extends React.Component<{}, PresenterAppState> {
       info('negotiation needed')
       try {
         const offer = await this.peerConnection.createOffer()
-        this.sendLocalDescription(offer)
+        this.sendLocalDescription(offer, '4eb9c7a1-f72a-48ff-afa0-432ceaf66b41')
       } catch (e) {
         throw e
       }
@@ -104,15 +101,19 @@ export class PresenterApp extends React.Component<{}, PresenterAppState> {
   }
 
   sendCandidate(c: RTCPeerConnectionIceEvent) {
-    info('sending candidate')
-    this.socket.emit('candidate', c.candidate)
+    if (c.candidate) {
+      info('sending candidate')
+      emitCandidate(this.socket)({ target: 'source', sourceClientId: '4eb9c7a1-f72a-48ff-afa0-432ceaf66b41', data: c.candidate})
+    }
   }
 
-  async sendLocalDescription(offer: RTCSessionDescriptionInit): Promise<void> {
+  async sendLocalDescription(offer: RTCSessionDescriptionInit, sourceClientId: string): Promise<void> {
     try {
       info('sending descriptor')
       await this.peerConnection.setLocalDescription(offer)
-      this.socket.emit('descriptor', this.peerConnection.localDescription)
+      if (this.peerConnection.localDescription) {
+        emitDescriptor(this.socket)({ target: 'source', data: this.peerConnection.localDescription, sourceClientId })
+      }
     } catch (e) {
       capture(e)
     }
@@ -126,7 +127,7 @@ export class PresenterApp extends React.Component<{}, PresenterAppState> {
     await this.peerConnection.setRemoteDescription(dto.data)
     if (dto.data.type === 'offer') {
       const offer = await this.peerConnection.createAnswer()
-      this.sendLocalDescription(offer)
+      this.sendLocalDescription(offer, dto.sourceClientId)
     }
   }
 

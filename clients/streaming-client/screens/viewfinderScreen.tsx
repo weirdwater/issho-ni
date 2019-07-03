@@ -2,7 +2,7 @@ import * as React from 'react';
 import { JoinSessionDTO } from '../../../shared/dto';
 import { Action, AsyncLoaded, isNone, isSome, Maybe, none, some, Some } from '../../../shared/fun';
 import { capture, info } from '../../shared/logger';
-import { signalingSocket } from '../../shared/signaling';
+import { emitCandidate, emitDescriptor, signalingSocket } from '../../shared/signaling';
 import { UnsupportedSDPTypeException } from '../../shared/socketExceptions/UnsupportedSDPTypeException';
 import { ClientCredentials, PeerConnectionState, StateUpdater } from '../../shared/types';
 import { Page } from '../components/page';
@@ -69,14 +69,21 @@ export class ViewfinderScreen extends React.Component<ViewfinderScreenProps, {}>
   initPeerconnection() {
     this.peerConnection = new RTCPeerConnection()
     this.peerConnection.onicecandidate = c => {
+      if (!c.candidate) {
+        return
+      }
       info('sending candidate')
-      this.socket.emit('candidate', c.candidate)
+      emitCandidate(this.socket)({
+        target: 'presenter',
+        sourceClientId: this.props.credentials.v.id,
+        data: c.candidate,
+      })
     }
     this.peerConnection.onnegotiationneeded = async () => {
       try {
         this.sendLocalDescription(await this.peerConnection.createOffer())
       } catch (e) {
-        throw e
+        capture(e)
       }
     }
     this.updateViewState(s => ({...s, peerState: some({
@@ -95,7 +102,14 @@ export class ViewfinderScreen extends React.Component<ViewfinderScreenProps, {}>
     try {
       info('sending descriptor')
       await this.peerConnection.setLocalDescription(offer).catch(capture)
-      this.socket.emit('descriptor', this.peerConnection.localDescription)
+      if (!this.peerConnection.localDescription) {
+        return
+      }
+      emitDescriptor(this.socket)({
+        target: 'presenter',
+        sourceClientId: this.props.credentials.v.id,
+        data: this.peerConnection.localDescription,
+      })
     } catch (e) {
       capture(e)
     }

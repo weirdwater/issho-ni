@@ -26,6 +26,8 @@ export const makeRoom = (suffix: 'user' | 'source' | 'presenter') => (session: s
   return `${session}_${suffix}`
 }
 
+export const presenterRoom = makeRoom('presenter')
+
 export const roomFromConsumer = (c: Consumer) => makeRoom(isUser(c) ? 'user' : c.v.kind)
 
 export interface AuthSocket extends Socket {

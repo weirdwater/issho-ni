@@ -1,7 +1,9 @@
 
 export class SourceDTO<a> {
 
-  clientId: string
+  target: 'source' | 'presenter'
+
+  sourceClientId: string
 
   data: a
 
