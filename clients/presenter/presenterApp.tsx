@@ -11,6 +11,7 @@ import { SocketState } from '../streaming-client/types';
 import { SessionCredentials } from './types';
 import { UnsupportedSDPTypeException } from '../shared/socketExceptions/UnsupportedSDPTypeException';
 import { capture, info } from '../shared/logger';
+import { signalingSocket } from '../shared/signaling';
 
 export interface PresenterAppState {
   credentials: Maybe<ClientCredentials>
@@ -144,17 +145,7 @@ export class PresenterApp extends React.Component<{}, PresenterAppState> {
     && (isNone(prevState.credentials) || isNone(prevState.credentials.v.sessionToken))) {
       const sessionId = '96a47b1d-1a91-4f55-b17f-3e82f5f757de'
 
-      this.socket = io(`/?session=${sessionId}`, {
-        transportOptions: {
-          polling: {
-            extraHeaders: bearerToken(this.state.credentials.v.sessionToken.v)({}),
-          },
-        },
-      })
-
-      this.socket.on('connect', () => this.updateState(updateSocketStatus<PresenterAppState>('connected')))
-      this.socket.on('disconnect', () => this.updateState(updateSocketStatus<PresenterAppState>('disconnected')))
-      this.socket.on('exception', (data: any) => { throw new SocketException(data) })
+      this.socket = signalingSocket<PresenterAppState>(this.state.credentials.v, sessionId, this.updateState)
       this.socket.on('descriptor', this.handleDescriptor)
       this.socket.on('candidate', this.handleCandidate)
     }

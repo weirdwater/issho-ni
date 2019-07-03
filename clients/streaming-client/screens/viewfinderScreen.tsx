@@ -1,18 +1,15 @@
 import * as React from 'react';
-import io from 'socket.io-client';
 import { JoinSessionDTO } from '../../../shared/dto';
-import { AsyncLoaded, isNone, isSome, Maybe, none, some, Some, Action } from '../../../shared/fun';
-import { bearerToken } from '../../shared/headers';
-import { updateSocketStatus } from '../../shared/helpers';
+import { Action, AsyncLoaded, isNone, isSome, Maybe, none, some, Some } from '../../../shared/fun';
+import { capture, info } from '../../shared/logger';
+import { signalingSocket } from '../../shared/signaling';
 import { UnsupportedSDPTypeException } from '../../shared/socketExceptions/UnsupportedSDPTypeException';
-import { ClientCredentials, StateUpdater, PeerConnectionState } from '../../shared/types';
+import { ClientCredentials, PeerConnectionState, StateUpdater } from '../../shared/types';
 import { Page } from '../components/page';
 import { StreamingAppState, ViewfinderScreenState } from '../streamingApp';
 import { SocketState } from '../types';
 import { LoadingPage } from './loadingPage';
 import * as styles from './viewfinderScreen.scss';
-import { info, capture } from '../../shared/logger';
-import { SocketException } from '../../shared/socketExceptions/socketException';
 
 const constraints = (deviceId: string): MediaStreamConstraints => ({
   audio: false,
@@ -106,17 +103,7 @@ export class ViewfinderScreen extends React.Component<ViewfinderScreenProps, {}>
 
   initSocketConnection() {
     if (isSome(this.props.credentials.v.sessionToken)) {
-      this.socket = io(`/?session=${this.props.session.v.id}`, {
-        transportOptions: {
-          polling: {
-            extraHeaders: bearerToken(this.props.credentials.v.sessionToken.v)({}),
-          },
-        },
-      })
-
-      this.socket.on('connect', () => this.updateViewState(s => updateSocketStatus<ViewfinderScreenState>('connected')(s)))
-      this.socket.on('disconnect', () => this.updateViewState(s => updateSocketStatus<ViewfinderScreenState>('disconnected')(s)))
-      this.socket.on('exception', (data: any) => { capture(new SocketException(data)) })
+      this.socket = signalingSocket<ViewfinderScreenState>(this.props.credentials.v, this.props.session.v.id, this.updateViewState)
 
       this.socket.on('descriptor', async (description: RTCSessionDescription) => {
         info('descriptor received', description)
