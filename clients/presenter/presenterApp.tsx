@@ -95,7 +95,7 @@ export class PresenterApp extends React.Component<{}, PresenterAppState> {
     this.peerConnection.onicegatheringstatechange = () => this.updateState(updatePeerState('iceGatheringState')(this.peerConnection))
     this.peerConnection.onsignalingstatechange = () => this.updateState(updatePeerState('signalingState')(this.peerConnection))
     this.peerConnection.onstatsended = e => info('on stats ended', e)
-    this.peerConnection.onicecandidateerror = e => info('on ice candidate error', e)
+    this.peerConnection.onicecandidateerror = e => capture(e)
   }
 
   sendCandidate(c: RTCPeerConnectionIceEvent) {
