@@ -6,10 +6,11 @@ import { ClientAuthenticationHandler } from '../shared/clientAuthenticationHandl
 import { bearerToken } from '../shared/headers';
 import { toFormattedJSON, updateSocketStatus } from '../shared/helpers';
 import { SocketException } from '../shared/socketExceptions/socketException';
-import { ClientCredentials } from '../shared/types';
+import { ClientCredentials, PeerConnectionState } from '../shared/types';
 import { SocketState } from '../streaming-client/types';
 import { SessionCredentials } from './types';
 import { UnsupportedSDPTypeException } from '../shared/socketExceptions/UnsupportedSDPTypeException';
+import { capture, info } from '../shared/logger';
 
 export interface PresenterAppState {
   credentials: Maybe<ClientCredentials>
@@ -18,6 +19,13 @@ export interface PresenterAppState {
   descriptors: Array<SourceDTO<DescriptorDTO>>
   candidates: Array<SourceDTO<CandidateDTO>>
   streams: MediaStream[]
+  peerState: PeerConnectionState
+}
+
+const updatePeerState = <k extends keyof PeerConnectionState>(key: k) => (pc: RTCPeerConnection): Action<PresenterAppState>  => {
+  const value = pc[key]
+  info('Peerstate update for', key, value)
+  return s => ({...s, peerState: {...s.peerState, [key]: value }})
 }
 
 export class PresenterApp extends React.Component<{}, PresenterAppState> {
@@ -29,6 +37,8 @@ export class PresenterApp extends React.Component<{}, PresenterAppState> {
   constructor(props: {}) {
     super(props)
 
+    this.peerConnection = new RTCPeerConnection()
+
     this.state = {
       credentials: none(),
       sessionCredentials: none(),
@@ -36,6 +46,12 @@ export class PresenterApp extends React.Component<{}, PresenterAppState> {
       descriptors: [],
       candidates: [],
       streams: [],
+      peerState: {
+        connectionState: this.peerConnection.connectionState,
+        iceConnectionState: this.peerConnection.iceConnectionState,
+        iceGatheringState: this.peerConnection.iceGatheringState,
+        signalingState: this.peerConnection.signalingState,
+      },
     }
 
     this.updateState = this.updateState.bind(this)
@@ -43,8 +59,6 @@ export class PresenterApp extends React.Component<{}, PresenterAppState> {
     this.handleCandidate = this.handleCandidate.bind(this)
     this.sendLocalDescription = this.sendLocalDescription.bind(this)
     this.sendCandidate = this.sendCandidate.bind(this)
-
-    this.authHandler = new ClientAuthenticationHandler<PresenterAppState>('presenter', this.updateState)
   }
 
   updateState(a: Action<PresenterAppState>, callback?: () => void) {
@@ -52,13 +66,12 @@ export class PresenterApp extends React.Component<{}, PresenterAppState> {
   }
 
   componentDidMount() {
-    // tslint:disable-next-line:no-console
-    this.authHandler.init().catch(console.log)
+    this.authHandler = new ClientAuthenticationHandler<PresenterAppState>('presenter', this.updateState)
+    this.authHandler.init().catch(capture)
 
-    this.peerConnection = new RTCPeerConnection()
     this.peerConnection.onicecandidate = this.sendCandidate
     this.peerConnection.onnegotiationneeded = async () => {
-      console.info('negotiation needed')
+      info('negotiation needed')
       try {
         const offer = await this.peerConnection.createOffer()
         this.sendLocalDescription(offer)
@@ -67,7 +80,7 @@ export class PresenterApp extends React.Component<{}, PresenterAppState> {
       }
     }
     this.peerConnection.ontrack = e => {
-      console.log('track',e)
+      info('track', e)
       if (!e.streams) {
         return
       }
@@ -76,10 +89,17 @@ export class PresenterApp extends React.Component<{}, PresenterAppState> {
       }
       this.setState(s => ({...s, streams: [...s.streams, ...e.streams]}))
     }
+    info(this.peerConnection)
+    this.peerConnection.oniceconnectionstatechange = () => this.updateState(updatePeerState('iceConnectionState')(this.peerConnection))
+    this.peerConnection.onconnectionstatechange = () => this.updateState(updatePeerState('connectionState')(this.peerConnection))
+    this.peerConnection.onicegatheringstatechange = () => this.updateState(updatePeerState('iceGatheringState')(this.peerConnection))
+    this.peerConnection.onsignalingstatechange = () => this.updateState(updatePeerState('signalingState')(this.peerConnection))
+    this.peerConnection.onstatsended = e => info('on stats ended', e)
+    this.peerConnection.onicecandidateerror = e => info('on ice candidate error', e)
   }
 
   sendCandidate(c: RTCPeerConnectionIceEvent) {
-    console.info('sending ice candidate')
+    info('sending ice candidate')
     this.socket.emit('candidate', c.candidate)
   }
 
@@ -88,7 +108,7 @@ export class PresenterApp extends React.Component<{}, PresenterAppState> {
       await this.peerConnection.setLocalDescription(offer)
       this.socket.emit('descriptor', this.peerConnection.localDescription)
     } catch (e) {
-      console.error(e)
+      capture(e)
     }
   }
 
@@ -96,7 +116,7 @@ export class PresenterApp extends React.Component<{}, PresenterAppState> {
     if (dto.data.type !== 'offer' && dto.data.type !== 'answer') {
       throw new UnsupportedSDPTypeException(`Unsupported SDP type: ${dto.data.type}`)
     }
-    console.info('descriptor received')
+    info('descriptor received')
     await this.peerConnection.setRemoteDescription(dto.data)
     if (dto.data.type === 'offer') {
       const offer = await this.peerConnection.createAnswer()
@@ -108,7 +128,7 @@ export class PresenterApp extends React.Component<{}, PresenterAppState> {
     if (!dto.data) {
       return
     }
-    console.info('candidate received')
+    info('candidate received')
     this.peerConnection.addIceCandidate(dto.data)
   }
 
@@ -143,7 +163,7 @@ export class PresenterApp extends React.Component<{}, PresenterAppState> {
         { isSome(this.state.credentials) ? toFormattedJSON(this.state.credentials) : 'no client credentials set'}
       </pre>
       <pre>
-        { isSome(this.state.sessionCredentials) ? toFormattedJSON(this.state.sessionCredentials) : 'no session credentials set'}
+        { toFormattedJSON(this.state.peerState)}
       </pre>
 
       <video autoPlay playsInline ref={this.video} />

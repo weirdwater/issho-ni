@@ -2,6 +2,8 @@ import { ClientType } from '../../shared/types'
 import { ClientCredentials, StateUpdater } from './types';
 import { Maybe, Action, isNone, some, isSome, none } from '../../shared/fun';
 import { ClientApi } from './clientApi';
+import { capture, info, warn } from './logger';
+import { ClientAuthenticationException } from './apiExceptions/clientAuthenticationException';
 
 export interface AuthClientState {
   credentials: Maybe<ClientCredentials>,
@@ -35,28 +37,24 @@ export class ClientAuthenticationHandler<a extends AuthClientState> {
       this.api.authenticate(c1.v)
         .then(token => this.updateState(this.updateClientSessionToken(some(token))))
         .catch(e => {if (e.name === 'Unauthorized') {
-          // tslint:disable-next-line:no-console
-          console.error('Could not authenticate using stored credentials, re-registering client.')
+          warn('Could not authenticate using stored credentials, re-registering client.')
           this.api.clearCredentials()
           this.api.register()
             .then(c => this.updateState(s => ({...s, credentials: some(c)})))
-            // tslint:disable-next-line:no-console
-            .catch(console.error)
+            .catch(capture)
           this.updateState(s => ({...s, credentials: none()}))
         }})
-        // tslint:disable-next-line:no-console
-        .catch(e => console.error('Could not authenticate client', e))
+        .catch(e => capture(new ClientAuthenticationException(e)))
     }
 
     if (isSome(c1) && isSome(c1.v.sessionToken) && (isNone(c0) || isNone(c0.v.sessionToken))) {
       // Check if session token works
       this.api.getClient(c1.v).catch((e: Error) => {
         if (e.name === 'Unauthorized') {
-          // tslint:disable-next-line:no-console
-          console.error('Could not continue session, re-authenticating')
+          info('Could not continue session, re-authenticating')
           return this.updateState(this.updateClientSessionToken(none()))
         }
-        throw e
+        capture(e)
       })
     }
   }

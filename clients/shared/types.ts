@@ -10,3 +10,10 @@ export interface ClientCredentials {
   kind: ClientType
   sessionToken: Maybe<string>
 }
+
+export interface PeerConnectionState {
+  connectionState: RTCPeerConnectionState
+  iceConnectionState: RTCIceConnectionState
+  iceGatheringState: RTCIceGathererState
+  signalingState: RTCSignalingState
+}

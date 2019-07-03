@@ -9,6 +9,7 @@ import { PermissionScreen } from './screens/permissionScreen';
 import { ViewfinderScreen } from './screens/viewfinderScreen';
 import * as styles from './streamingApp.scss';
 import { PermissionState } from './types';
+import { capture } from '../shared/logger';
 
 export interface EntryScreenState {
   screen: 'entry',
@@ -71,8 +72,7 @@ export class StreamingApp extends React.Component<{}, StreamingAppState> {
   }
 
   componentDidMount() {
-    // tslint:disable-next-line:no-console
-    this.authHandler.init().catch(console.error)
+    this.authHandler.init().catch(capture)
   }
 
   componentDidUpdate(_: {}, prevState: StreamingAppState) {
