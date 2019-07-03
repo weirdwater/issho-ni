@@ -3,7 +3,7 @@ import { Observable } from 'rxjs';
 import { Socket } from 'socket.io';
 import { AuthService } from '../api/auth/auth.service';
 import { isNone } from '../../shared/fun';
-import { sessionTokenFromSocket } from './signaling.helper';
+import { sessionTokenFromSocket, AuthSocket } from './signaling.helper';
 
 @Injectable()
 export class SocketGuard implements CanActivate {
@@ -18,6 +18,10 @@ export class SocketGuard implements CanActivate {
 
     if (isNone(token)) {
       return false
+    }
+
+    if ((socket as AuthSocket).consumer) {
+      return true
     }
 
     const session = await this.authService.validate(token.v)

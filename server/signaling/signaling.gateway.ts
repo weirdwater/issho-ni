@@ -7,7 +7,8 @@ import { AuthService } from '../api/auth/auth.service';
 import { ClientService } from '../api/client/client.service';
 import { AuthSocket, makeRoom, roomFromConsumer, sessionTokenFromSocket } from './signaling.helper';
 import { RavenInterceptor } from 'nest-raven';
-import { UseInterceptors } from '@nestjs/common';
+import { UseInterceptors, UseGuards } from '@nestjs/common';
+import { SocketGuard } from './socket.guard';
 
 @WebSocketGateway()
 @UseInterceptors(new RavenInterceptor({
@@ -62,6 +63,7 @@ export class SignalingGateway implements OnGatewayConnection, OnGatewayDisconnec
   }
 
   @SubscribeMessage('descriptor')
+  @UseGuards(SocketGuard)
   handleDescriptor(socket: AuthSocket, descriptor: DescriptorDTO): void {
     if (isUser(socket.consumer)) {
       throw new WsException('Forbidden')
@@ -80,6 +82,7 @@ export class SignalingGateway implements OnGatewayConnection, OnGatewayDisconnec
   }
 
   @SubscribeMessage('candidate')
+  @UseGuards(SocketGuard)
   handleCandidate(socket: AuthSocket, candidate: CandidateDTO): void {
     if (isUser(socket.consumer)) {
       throw new WsException('Forbidden')
