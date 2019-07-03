@@ -2,7 +2,7 @@ import * as React from 'react';
 import { JoinSessionDTO } from '../../shared/dto';
 import { Action, Async, AsyncLoaded, isLoaded, isLoading, isPristine, isSome, Maybe, none, pristine, Some } from '../../shared/fun';
 import { ClientAuthenticationHandler } from '../shared/clientAuthenticationHandler';
-import { ClientCredentials } from '../shared/types';
+import { ClientCredentials, PeerConnectionState } from '../shared/types';
 import { joinSession } from './apiHandler';
 import { EntryScreen } from './screens/entryScreen';
 import { PermissionScreen } from './screens/permissionScreen';
@@ -32,7 +32,7 @@ export interface ViewfinderScreenState {
   availableDevices: Maybe<MediaDeviceInfo[]>
   currentDeviceId: Maybe<string>
   stream: Maybe<MediaStream>
-  peerConnection: RTCPeerConnection
+  peerState: Maybe<PeerConnectionState>
   socket: 'disconnected' | 'connected'
 }
 
@@ -45,7 +45,7 @@ export const initialViewfinderState = (s: PermissionScreenState): ViewfinderScre
   availableDevices: none(),
   currentDeviceId: none(),
   stream: none(),
-  peerConnection: new RTCPeerConnection(),
+  peerState: none(),
   socket: 'disconnected',
 })
 

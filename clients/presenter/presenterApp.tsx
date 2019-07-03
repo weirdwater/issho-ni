@@ -19,13 +19,18 @@ export interface PresenterAppState {
   descriptors: Array<SourceDTO<DescriptorDTO>>
   candidates: Array<SourceDTO<CandidateDTO>>
   streams: MediaStream[]
-  peerState: PeerConnectionState
+  peerState: Maybe<PeerConnectionState>
 }
 
-const updatePeerState = <k extends keyof PeerConnectionState>(key: k) => (pc: RTCPeerConnection): Action<PresenterAppState>  => {
+const updatePeerState = <k extends keyof PeerConnectionState>(key: k) => (pc: RTCPeerConnection): Action<PresenterAppState> => {
   const value = pc[key]
-  info('Peerstate update for', key, value)
-  return s => ({...s, peerState: {...s.peerState, [key]: value }})
+  return s => {
+    if (isNone(s.peerState)) {
+      return s
+    }
+    info('Peerstate update for', key, s.peerState.v[key], '->', value)
+    return  {...s, peerState: some({...s.peerState.v, [key]: value })}
+  }
 }
 
 export class PresenterApp extends React.Component<{}, PresenterAppState> {
@@ -37,8 +42,6 @@ export class PresenterApp extends React.Component<{}, PresenterAppState> {
   constructor(props: {}) {
     super(props)
 
-    this.peerConnection = new RTCPeerConnection()
-
     this.state = {
       credentials: none(),
       sessionCredentials: none(),
@@ -46,12 +49,7 @@ export class PresenterApp extends React.Component<{}, PresenterAppState> {
       descriptors: [],
       candidates: [],
       streams: [],
-      peerState: {
-        connectionState: this.peerConnection.connectionState,
-        iceConnectionState: this.peerConnection.iceConnectionState,
-        iceGatheringState: this.peerConnection.iceGatheringState,
-        signalingState: this.peerConnection.signalingState,
-      },
+      peerState: none(),
     }
 
     this.updateState = this.updateState.bind(this)
@@ -69,6 +67,7 @@ export class PresenterApp extends React.Component<{}, PresenterAppState> {
     this.authHandler = new ClientAuthenticationHandler<PresenterAppState>('presenter', this.updateState)
     this.authHandler.init().catch(capture)
 
+    this.peerConnection = new RTCPeerConnection()
     this.peerConnection.onicecandidate = this.sendCandidate
     this.peerConnection.onnegotiationneeded = async () => {
       info('negotiation needed')
@@ -89,22 +88,28 @@ export class PresenterApp extends React.Component<{}, PresenterAppState> {
       }
       this.setState(s => ({...s, streams: [...s.streams, ...e.streams]}))
     }
-    info(this.peerConnection)
     this.peerConnection.oniceconnectionstatechange = () => this.updateState(updatePeerState('iceConnectionState')(this.peerConnection))
     this.peerConnection.onconnectionstatechange = () => this.updateState(updatePeerState('connectionState')(this.peerConnection))
     this.peerConnection.onicegatheringstatechange = () => this.updateState(updatePeerState('iceGatheringState')(this.peerConnection))
     this.peerConnection.onsignalingstatechange = () => this.updateState(updatePeerState('signalingState')(this.peerConnection))
     this.peerConnection.onstatsended = e => info('on stats ended', e)
     this.peerConnection.onicecandidateerror = e => capture(e)
+    this.updateState(s => ({...s, peerState: some({
+      connectionState: this.peerConnection.connectionState,
+      iceConnectionState: this.peerConnection.iceConnectionState,
+      iceGatheringState: this.peerConnection.iceGatheringState,
+      signalingState: this.peerConnection.signalingState,
+    }) }))
   }
 
   sendCandidate(c: RTCPeerConnectionIceEvent) {
-    info('sending ice candidate')
+    info('sending candidate')
     this.socket.emit('candidate', c.candidate)
   }
 
   async sendLocalDescription(offer: RTCSessionDescriptionInit): Promise<void> {
     try {
+      info('sending descriptor')
       await this.peerConnection.setLocalDescription(offer)
       this.socket.emit('descriptor', this.peerConnection.localDescription)
     } catch (e) {
@@ -113,10 +118,10 @@ export class PresenterApp extends React.Component<{}, PresenterAppState> {
   }
 
   async handleDescriptor(dto: SourceDTO<DescriptorDTO>): Promise<void> {
+    info('descriptor received')
     if (dto.data.type !== 'offer' && dto.data.type !== 'answer') {
       throw new UnsupportedSDPTypeException(`Unsupported SDP type: ${dto.data.type}`)
     }
-    info('descriptor received')
     await this.peerConnection.setRemoteDescription(dto.data)
     if (dto.data.type === 'offer') {
       const offer = await this.peerConnection.createAnswer()
@@ -125,10 +130,10 @@ export class PresenterApp extends React.Component<{}, PresenterAppState> {
   }
 
   handleCandidate(dto: SourceDTO<CandidateDTO>): void {
+    info('candidate received')
     if (!dto.data) {
       return
     }
-    info('candidate received')
     this.peerConnection.addIceCandidate(dto.data)
   }
 

@@ -6,6 +6,7 @@ import { LoadingPage } from './loadingPage';
 import { Page } from '../components/page';
 import { Heading } from '../components/heading';
 import { Button } from '../components/button';
+import { capture } from '../../shared/logger';
 
 export interface PermissionScreenProps {
   updateState: StateUpdater<StreamingAppState>
@@ -51,8 +52,7 @@ export class PermissionScreen extends React.Component<PermissionScreenProps, {}>
           }
         })
         .catch((e: any) => {
-          // tslint:disable-next-line:no-console
-          console.error(e)
+          capture(e)
           this.updatePermissionState('unsupported')
         })
     } else {
