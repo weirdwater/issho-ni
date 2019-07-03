@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { JoinSessionDTO } from '../../../shared/dto';
+import { JoinSessionDTO, CandidateDTO, SourceDTO, DescriptorDTO } from '../../../shared/dto';
 import { Action, AsyncLoaded, isNone, isSome, Maybe, none, some, Some } from '../../../shared/fun';
 import { capture, info } from '../../shared/logger';
 import { emitCandidate, emitDescriptor, signalingSocket } from '../../shared/signaling';
@@ -119,23 +119,23 @@ export class ViewfinderScreen extends React.Component<ViewfinderScreenProps, {}>
     if (isSome(this.props.credentials.v.sessionToken)) {
       this.socket = signalingSocket<ViewfinderScreenState>(this.props.credentials.v, this.props.session.v.id, this.updateViewState)
 
-      this.socket.on('descriptor', async (description: RTCSessionDescription) => {
-        info('descriptor received', description)
-        if (description.type !== 'offer' && description.type !== 'answer') {
-          throw new UnsupportedSDPTypeException(`Unsupported SDP type: ${description.type}`)
+      this.socket.on('descriptor', async (dto: SourceDTO<DescriptorDTO>) => {
+        info('descriptor received', dto)
+        if (dto.data.type !== 'offer' && dto.data.type !== 'answer') {
+          throw new UnsupportedSDPTypeException(`Unsupported SDP type: ${dto.data.type}`)
         }
-        await this.peerConnection.setRemoteDescription(description)
-        if (description.type === 'offer') {
+        await this.peerConnection.setRemoteDescription(dto.data)
+        if (dto.data.type === 'offer') {
           this.sendLocalDescription(await this.peerConnection.createOffer())
         }
       })
 
-      this.socket.on('candidate', (candidate: RTCIceCandidate) => {
-        if (!candidate) {
+      this.socket.on('candidate', (candidate: SourceDTO<CandidateDTO>) => {
+        if (!candidate.data) {
           return
         }
         info('candidate received', candidate)
-        this.peerConnection.addIceCandidate(candidate)
+        this.peerConnection.addIceCandidate(candidate.data)
       })
     }
   }
