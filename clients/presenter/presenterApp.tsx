@@ -30,6 +30,7 @@ import { LoadingPage } from '../streaming-client/screens/loadingPage';
 import { SocketState } from '../streaming-client/types';
 import { StreamVideo } from './components/streamVideo';
 import * as styles from './presenterApp.scss';
+import freeice from 'freeice';
 
 export interface PresenterAppState {
   credentials: Maybe<ClientCredentials>
@@ -107,7 +108,7 @@ export class PresenterApp extends React.Component<PresenterAppProps, PresenterAp
 
   peerConnectionInit(clientId: string) {
     return new Promise((resolve, reject) => {
-      const pc = new RTCPeerConnection()
+      const pc = new RTCPeerConnection({ iceServers: freeice() })
       pc.onicecandidate = this.sendCandidate(clientId)
       pc.onnegotiationneeded = async () => {
         info('negotiation needed')

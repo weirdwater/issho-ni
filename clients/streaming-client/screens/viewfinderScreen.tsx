@@ -10,6 +10,7 @@ import { StreamingAppState, ViewfinderScreenState } from '../streamingApp';
 import { SocketState } from '../types';
 import { LoadingPage } from './loadingPage';
 import * as styles from './viewfinderScreen.scss';
+import freeice from 'freeice'
 
 const constraints = (deviceId: string): MediaStreamConstraints => ({
   audio: false,
@@ -67,7 +68,7 @@ export class ViewfinderScreen extends React.Component<ViewfinderScreenProps, {}>
   }
 
   initPeerconnection() {
-    this.peerConnection = new RTCPeerConnection()
+    this.peerConnection = new RTCPeerConnection({ iceServers: freeice() })
     this.peerConnection.onicecandidate = c => {
       if (!c.candidate) {
         return
