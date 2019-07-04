@@ -19,7 +19,7 @@ import { User } from '../user/user.entity';
 import { CreateSessionDTO, SessionDTO, HostSessionDTO } from '../../../shared/dto';
 import { Session } from './session.entity';
 import { SessionService } from './session.service';
-import { SessionNotActiveException } from 'server/exceptions/sessionNotActive.exception';
+import { SessionNotActiveException } from '../../exceptions/sessionNotActive.exception';
 
 @Controller('api/session')
 @UseInterceptors(ClassSerializerInterceptor)
