@@ -33,7 +33,7 @@
 .videos {
   @extend %fullGrid;
   display: grid;
-  grid-template-columns: 1fr 1fr 1fr;
+  grid-template-columns: repeat(6, 1fr);
   grid-template-rows: repeat(3, calc(100vh / 3));
 
   & > video {
