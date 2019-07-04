@@ -16,10 +16,9 @@ import * as crypto from 'crypto';
 import { Consumer, isUser } from '../auth/auth.helpers';
 import { NotFoundInterceptor } from '../not-found.interceptor';
 import { User } from '../user/user.entity';
-import { CreateSessionDTO, SessionDTO } from '../../../shared/dto';
+import { CreateSessionDTO, SessionDTO, HostSessionDTO } from '../../../shared/dto';
 import { Session } from './session.entity';
 import { SessionService } from './session.service';
-import { HostSessionDTO } from 'shared/dto/session/hostSession.dto';
 import { SessionNotActiveException } from 'server/exceptions/sessionNotActive.exception';
 
 @Controller('api/session')
@@ -80,6 +79,10 @@ export class SessionController {
       throw new ForbiddenException()
     }
     const session = await this.sessionService.findOne({ id, key: dto.key})
+
+    if (session === undefined) {
+      throw new NotFoundException('Session not found')
+    }
 
     if (session.activeSession === undefined) {
       throw new SessionNotActiveException()
