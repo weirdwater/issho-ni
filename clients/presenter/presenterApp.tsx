@@ -11,6 +11,7 @@ import { SocketState } from '../streaming-client/types'
 import { SessionCredentials } from './types'
 import { PeerConnectionMissingException } from '../shared/peerConnectionMissingException'
 import { Map } from 'immutable'
+import { StreamVideo } from './components/streamVideo';
 
 export interface PresenterAppState {
   credentials: Maybe<ClientCredentials>
@@ -18,7 +19,7 @@ export interface PresenterAppState {
   socket: SocketState
   descriptors: Array<SourceDTO<DescriptorDTO>>
   candidates: Array<SourceDTO<CandidateDTO>>
-  streams: MediaStream[]
+  streams: Map<string, MediaStream>
   peers: Map<string, PeerConnectionState>
 }
 
@@ -61,7 +62,7 @@ export class PresenterApp extends React.Component<{}, PresenterAppState> {
       socket: 'disconnected',
       descriptors: [],
       candidates: [],
-      streams: [],
+      streams: Map(),
       peers: Map(),
     }
 
@@ -100,10 +101,7 @@ export class PresenterApp extends React.Component<{}, PresenterAppState> {
         if (!e.streams) {
           return
         }
-        if (this.video && this.video.current) {
-          this.video.current.srcObject = e.streams[0]
-        }
-        this.setState(s => ({...s, streams: [...s.streams, ...e.streams]}))
+        this.setState(s => ({...s, streams: s.streams.set(clientId, e.streams[0]) }))
       }
       const ups = updatePeerState(clientId)
       pc.oniceconnectionstatechange = () => this.updateState(ups('iceConnectionState')(pc))
@@ -212,7 +210,12 @@ export class PresenterApp extends React.Component<{}, PresenterAppState> {
     this.peers[clientId].close()
     delete this.peers[clientId]
 
-    this.updateState(s => ({...s, peers: s.peers.delete(clientId) }))
+    const stream = this.state.streams.get(clientId)
+    if (stream) {
+      stream.getTracks().forEach(t => t.stop())
+    }
+
+    this.updateState(s => ({...s, peers: s.peers.delete(clientId), streams: s.streams.delete(clientId) }))
   }
 
   render() {
@@ -226,7 +229,7 @@ export class PresenterApp extends React.Component<{}, PresenterAppState> {
         { toFormattedJSON(this.state.peers.toJS())}
       </pre>
 
-      <video autoPlay playsInline ref={this.video} />
+      { this.state.streams.map((s, i) => <StreamVideo key={i} stream={s} />).toArray().map(e => e[1]) }
 
     </section>)
   }
