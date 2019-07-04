@@ -16,9 +16,11 @@ import * as crypto from 'crypto';
 import { Consumer, isUser } from '../auth/auth.helpers';
 import { NotFoundInterceptor } from '../not-found.interceptor';
 import { User } from '../user/user.entity';
-import { CreateSessionDTO, JoinSessionDTO } from '../../../shared/dto';
+import { CreateSessionDTO, SessionDTO } from '../../../shared/dto';
 import { Session } from './session.entity';
 import { SessionService } from './session.service';
+import { HostSessionDTO } from 'shared/dto/session/hostSession.dto';
+import { SessionNotActiveException } from 'server/exceptions/sessionNotActive.exception';
 
 @Controller('api/session')
 @UseInterceptors(ClassSerializerInterceptor)
@@ -36,7 +38,7 @@ export class SessionController {
   @UseGuards(AuthGuard())
   @UseInterceptors(NotFoundInterceptor)
   getOne(@Param('id') id: string): Promise<Session> {
-    return this.sessionService.findOne(id)
+    return this.sessionService.findOne({ id })
   }
 
   @Post()
@@ -55,7 +57,7 @@ export class SessionController {
 
   @Get(':token/join')
   @UseGuards(AuthGuard())
-  async join(@Param('token') token: string, @Consumer() consumer: Consumer): Promise<JoinSessionDTO> {
+  async join(@Param('token') token: string, @Consumer() consumer: Consumer): Promise<SessionDTO> {
     if (isUser(consumer)) {
       throw new ForbiddenException()
     }
@@ -65,8 +67,25 @@ export class SessionController {
       throw new NotFoundException()
     }
 
-    const session = await this.sessionService.findOne(active.session.id)
+    const session = await this.sessionService.findOne({ id: active.session.id })
     session.clients.push(consumer.v)
+
+    return this.sessionService.save(session)
+  }
+
+  @Put(':id/host')
+  @UseGuards(AuthGuard())
+  async host(@Param('id') id: string, @Consumer() consumer: Consumer, @Body() dto: HostSessionDTO): Promise<SessionDTO> {
+    if (isUser(consumer) || consumer.v.kind !== 'presenter') {
+      throw new ForbiddenException()
+    }
+    const session = await this.sessionService.findOne({ id, key: dto.key})
+
+    if (session.activeSession === undefined) {
+      throw new SessionNotActiveException()
+    }
+
+    session.presenter = consumer.v
 
     return this.sessionService.save(session)
   }

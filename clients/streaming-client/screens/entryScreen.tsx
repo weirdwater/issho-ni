@@ -7,13 +7,13 @@ import * as styles from './entryScreen.scss'
 import { Page } from '../components/page';
 import { Button } from '../components/button';
 import { TokenInput } from '../components/tokenInput';
-import { JoinSessionDTO } from '../../../shared/dto';
+import { SessionDTO } from '../../../shared/dto';
 
 export interface EntryScreenProps {
   updateState: StateUpdater<StreamingAppState>
   sessionToken: Maybe<string>
   credentials: Maybe<ClientCredentials>
-  session: Async<JoinSessionDTO>
+  session: Async<SessionDTO>
 }
 
 const updateSessionToken = (us: StateUpdater<StreamingAppState>) => (value: string) => value === ''

@@ -19,8 +19,8 @@ export class SessionService {
     return this.sessionRepository.find()
   }
 
-  findOne(sessionId: string): Promise<Session> {
-    return this.sessionRepository.findOne(sessionId, { relations: ['activeSession', 'owner', 'clients', 'presenter']})
+  findOne(s: Partial<Session>): Promise<Session> {
+    return this.sessionRepository.findOne(s, { relations: ['activeSession', 'owner', 'clients', 'presenter']})
   }
 
   save(session: Session): Promise<Session> {

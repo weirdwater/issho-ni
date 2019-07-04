@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { JoinSessionDTO, CandidateDTO, SourceDTO, DescriptorDTO } from '../../../shared/dto';
+import { SessionDTO, CandidateDTO, SourceDTO, DescriptorDTO } from '../../../shared/dto';
 import { Action, AsyncLoaded, isNone, isSome, Maybe, none, some, Some } from '../../../shared/fun';
 import { capture, info } from '../../shared/logger';
 import { emitCandidate, emitDescriptor, signalingSocket } from '../../shared/signaling';
@@ -24,7 +24,7 @@ export interface ViewfinderScreenProps {
   currentDeviceId: Maybe<string>
   stream: Maybe<MediaStream>
   socket: SocketState
-  session: AsyncLoaded<JoinSessionDTO>
+  session: AsyncLoaded<SessionDTO>
   credentials: Some<ClientCredentials>
   peerState: Maybe<PeerConnectionState>
 }

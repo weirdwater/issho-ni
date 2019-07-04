@@ -1,30 +1,49 @@
-import * as React from 'react'
-import { CandidateDTO, DescriptorDTO, SourceDTO } from '../../shared/dto'
-import { Action, isNone, isSome, Maybe, none, some } from '../../shared/fun'
-import { ClientAuthenticationHandler } from '../shared/clientAuthenticationHandler'
-import { toFormattedJSON } from '../shared/helpers'
-import { capture, info } from '../shared/logger'
-import { emitCandidate, emitDescriptor, signalingSocket } from '../shared/signaling'
-import { UnsupportedSDPTypeException } from '../shared/socketExceptions/UnsupportedSDPTypeException'
-import { ClientCredentials, PeerConnectionState } from '../shared/types'
-import { SocketState } from '../streaming-client/types'
-import { SessionCredentials } from './types'
-import { PeerConnectionMissingException } from '../shared/peerConnectionMissingException'
-import { Map } from 'immutable'
-import { StreamVideo } from './components/streamVideo';
-import * as styles from './presenterApp.scss'
-import { Title } from '../shared/components/title';
+import { Map } from 'immutable';
+import * as React from 'react';
+import { CandidateDTO, DescriptorDTO, SessionDTO, SourceDTO } from '../../shared/dto';
+import {
+  Action,
+  Async,
+  error,
+  isError,
+  isLoaded,
+  isLoading,
+  isNone,
+  isPristine,
+  isSome,
+  loaded,
+  loading,
+  Maybe,
+  none,
+  pristine,
+} from '../../shared/fun';
+import { ClientAuthenticationHandler } from '../shared/clientAuthenticationHandler';
 import { Heading } from '../shared/components/heading';
 import { Highlight } from '../shared/components/highlight';
+import { capture, info } from '../shared/logger';
+import { PeerConnectionMissingException } from '../shared/peerConnectionMissingException';
+import { sessionApi } from '../shared/sessionApi';
+import { emitCandidate, emitDescriptor, signalingSocket } from '../shared/signaling';
+import { UnsupportedSDPTypeException } from '../shared/socketExceptions/UnsupportedSDPTypeException';
+import { ClientCredentials, PeerConnectionState } from '../shared/types';
+import { LoadingPage } from '../streaming-client/screens/loadingPage';
+import { SocketState } from '../streaming-client/types';
+import { StreamVideo } from './components/streamVideo';
+import * as styles from './presenterApp.scss';
 
 export interface PresenterAppState {
   credentials: Maybe<ClientCredentials>
-  sessionCredentials: Maybe<SessionCredentials>
+  session: Async<SessionDTO>
   socket: SocketState
   descriptors: Array<SourceDTO<DescriptorDTO>>
   candidates: Array<SourceDTO<CandidateDTO>>
   streams: Map<string, MediaStream>
   peers: Map<string, PeerConnectionState>
+}
+
+export interface PresenterAppProps {
+  sessionId: Maybe<string>
+  sessionKey: Maybe<string>
 }
 
 const equals = <a extends { [key: string]: any }>(o0: a, o1?: a): boolean => {
@@ -51,18 +70,17 @@ const updatePeerState = (id: string) => <k extends keyof PeerConnectionState>(ke
   }
 }
 
-export class PresenterApp extends React.Component<{}, PresenterAppState> {
+export class PresenterApp extends React.Component<PresenterAppProps, PresenterAppState> {
   private authHandler: ClientAuthenticationHandler<PresenterAppState>
   private socket: SocketIOClient.Socket
-  private video = React.createRef<HTMLVideoElement>()
   private peers: { [clientId: string]: RTCPeerConnection } = {}
 
-  constructor(props: {}) {
+  constructor(props: PresenterAppProps) {
     super(props)
 
     this.state = {
       credentials: none(),
-      sessionCredentials: none(),
+      session: pristine(),
       socket: 'disconnected',
       descriptors: [],
       candidates: [],
@@ -190,11 +208,21 @@ export class PresenterApp extends React.Component<{}, PresenterAppState> {
       }
     })
 
-    if (isSome(this.state.credentials) && isSome(this.state.credentials.v.sessionToken)
+    if (isSome(this.props.sessionId) && isSome(this.props.sessionKey)
+    && isSome(this.state.credentials) && isSome(this.state.credentials.v.sessionToken)
     && (isNone(prevState.credentials) || isNone(prevState.credentials.v.sessionToken))) {
-      const sessionId = '96a47b1d-1a91-4f55-b17f-3e82f5f757de'
+      this.updateState(s => ({...s, session: loading()}))
+      sessionApi(this.state.credentials.v).hostSession(this.props.sessionId.v, this.props.sessionKey.v)
+        .then(dto => this.updateState(s => ({...s, session: loaded(dto)})))
+        .catch(e => this.updateState(s => ({...s, session: error(e.message)})))
+    }
 
-      this.socket = signalingSocket<PresenterAppState>(this.state.credentials.v, sessionId, this.updateState)
+    if (isSome(this.state.credentials) && isSome(this.state.credentials.v.sessionToken)
+    && isLoaded(this.state.session) && isLoading(prevState.session)) {
+      this.socket = signalingSocket<PresenterAppState>(
+        this.state.credentials.v,
+        this.state.session.v.id,
+        this.updateState)
       this.socket.on('descriptor', this.handleDescriptor)
       this.socket.on('candidate', this.handleCandidate)
     }
@@ -223,10 +251,43 @@ export class PresenterApp extends React.Component<{}, PresenterAppState> {
   }
 
   render() {
+
+    if (isNone(this.props.sessionId) || isNone(this.props.sessionKey)) {
+      return (<section className={styles.container} >
+
+        <div className={styles.background} >
+          <Heading w={1} className={styles.title} >No session available</Heading>
+          <Heading w={2} className={styles.subheading} >Join the fun at <a href='/live' ><Highlight>issho.app/live</Highlight></a></Heading>
+        </div>
+
+      </section>)
+    }
+
+    if (isPristine(this.state.session) || isLoading(this.state.session)) {
+      return (<section className={styles.container} >
+
+        <div className={styles.background} >
+          <Heading w={1} className={styles.title} ><Highlight>Loading...</Highlight></Heading>
+        </div>
+
+      </section>)
+    }
+
+    if (isError(this.state.session)) {
+      return (<section className={styles.container} >
+
+        <div className={styles.background} >
+          <Heading w={1} className={styles.title} >Oops!</Heading>
+          <Heading w={2} className={styles.subheading} >{this.state.session.m}</Heading>
+        </div>
+
+      </section>)
+    }
+
     return (<section className={styles.container} >
 
       <div className={styles.background} >
-        <Heading w={1} className={styles.title} >Use code <Highlight>723C</Highlight></Heading>
+        <Heading w={1} className={styles.title} >Use code <Highlight>{this.state.session.v.activeSession.token}</Highlight></Heading>
         <Heading w={2} className={styles.subheading} >to join at issho.app/live</Heading>
       </div>
 

@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { JoinSessionDTO } from '../../shared/dto';
+import { SessionDTO } from '../../shared/dto';
 import { Action, Async, AsyncLoaded, isLoaded, isLoading, isPristine, isSome, Maybe, none, pristine, Some } from '../../shared/fun';
 import { ClientAuthenticationHandler } from '../shared/clientAuthenticationHandler';
 import { ClientCredentials, PeerConnectionState } from '../shared/types';
@@ -14,20 +14,20 @@ import { capture } from '../shared/logger';
 export interface EntryScreenState {
   screen: 'entry',
   sessionToken: Maybe<string>
-  session: Async<JoinSessionDTO>
+  session: Async<SessionDTO>
   credentials: Maybe<ClientCredentials>
 }
 
 export interface PermissionScreenState {
   screen: 'permission',
-  session: AsyncLoaded<JoinSessionDTO>
+  session: AsyncLoaded<SessionDTO>
   credentials: Some<ClientCredentials>
   permission: PermissionState
 }
 
 export interface ViewfinderScreenState {
   screen: 'viewfinder'
-  session: AsyncLoaded<JoinSessionDTO>
+  session: AsyncLoaded<SessionDTO>
   credentials: Some<ClientCredentials>
   availableDevices: Maybe<MediaDeviceInfo[]>
   currentDeviceId: Maybe<string>

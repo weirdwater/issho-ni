@@ -1,3 +1,3 @@
 
 export * from './createSession.dto'
-export * from './joinSession.dto'
+export * from './session.dto'
