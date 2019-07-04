@@ -4,7 +4,7 @@ import { StreamingAppState, initialViewfinderState } from '../streamingApp';
 import { PermissionState } from '../types';
 import { LoadingPage } from './loadingPage';
 import { Page } from '../components/page';
-import { Heading } from '../components/heading';
+import { Heading } from '../../shared/components/heading';
 import { Button } from '../components/button';
 import { capture } from '../../shared/logger';
 

@@ -12,6 +12,10 @@ import { SessionCredentials } from './types'
 import { PeerConnectionMissingException } from '../shared/peerConnectionMissingException'
 import { Map } from 'immutable'
 import { StreamVideo } from './components/streamVideo';
+import * as styles from './presenterApp.scss'
+import { Title } from '../shared/components/title';
+import { Heading } from '../shared/components/heading';
+import { Highlight } from '../shared/components/highlight';
 
 export interface PresenterAppState {
   credentials: Maybe<ClientCredentials>
@@ -219,17 +223,16 @@ export class PresenterApp extends React.Component<{}, PresenterAppState> {
   }
 
   render() {
-    return (<section>
-      <h1>Presentation</h1>
+    return (<section className={styles.container} >
 
-      <pre>
-        { isSome(this.state.credentials) ? toFormattedJSON(this.state.credentials) : 'no client credentials set'}
-      </pre>
-      <pre>
-        { toFormattedJSON(this.state.peers.toJS())}
-      </pre>
+      <div className={styles.background} >
+        <Heading w={1} className={styles.title} >Use code <Highlight>723C</Highlight></Heading>
+        <Heading w={2} className={styles.subheading} >to join at issho.app/live</Heading>
+      </div>
 
+      <div className={styles.videos} >
       { this.state.streams.map((s, i) => <StreamVideo key={i} stream={s} />).toArray().map(e => e[1]) }
+      </div>
 
     </section>)
   }

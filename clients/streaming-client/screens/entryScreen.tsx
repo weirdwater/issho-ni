@@ -2,7 +2,7 @@ import * as React from 'react'
 import { StateUpdater, ClientCredentials } from '../../shared/types';
 import { StreamingAppState } from '../streamingApp';
 import { isSome, none, some, Maybe, isNone, isError, Async, isPristine, loading, isLoading, unit, pristine } from '../../../shared/fun';
-import { Title, Subtitle } from '../components/title';
+import { Title, Subtitle } from '../../shared/components/title';
 import * as styles from './entryScreen.scss'
 import { Page } from '../components/page';
 import { Button } from '../components/button';
