@@ -7,10 +7,15 @@
   font-family: 'Staatliches', sans-serif;
   font-size: 25px;
   border-radius: 5px;
-  padding: 0.68em;
+  padding: 0.68em 56px;
   border: none;
 
   &:disabled {
     opacity: .4;
   }
+}
+
+.linkButton {
+  @extend .button;
+  text-decoration: none;
 }

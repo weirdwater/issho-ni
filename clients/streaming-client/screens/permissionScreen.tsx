@@ -5,7 +5,7 @@ import { PermissionState } from '../types';
 import { LoadingPage } from './loadingPage';
 import { Page } from '../components/page';
 import { Heading } from '../../shared/components/heading';
-import { Button } from '../components/button';
+import { Button } from '../../shared/components/button';
 import { capture } from '../../shared/logger';
 
 export interface PermissionScreenProps {

@@ -3,6 +3,9 @@ import * as ReactDOM from 'react-dom'
 import { PresenterApp } from './presenterApp';
 import * as Sentry from '@sentry/browser'
 import { none, some, Maybe } from '../../shared/fun';
+import * as styles from '../shared/base.scss'
+
+const style = styles.app
 
 if ((window as any).sentryData) {
   Sentry.init({

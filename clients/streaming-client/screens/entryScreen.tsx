@@ -5,7 +5,7 @@ import { isSome, none, some, Maybe, isNone, isError, Async, isPristine, loading,
 import { Title, Subtitle } from '../../shared/components/title';
 import * as styles from './entryScreen.scss'
 import { Page } from '../components/page';
-import { Button } from '../components/button';
+import { Button } from '../../shared/components/button';
 import { TokenInput } from '../components/tokenInput';
 import { SessionDTO } from '../../../shared/dto';
 

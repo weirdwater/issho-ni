@@ -7,7 +7,6 @@ import { joinSession } from './apiHandler';
 import { EntryScreen } from './screens/entryScreen';
 import { PermissionScreen } from './screens/permissionScreen';
 import { ViewfinderScreen } from './screens/viewfinderScreen';
-import * as styles from './streamingApp.scss';
 import { PermissionState } from './types';
 import { capture } from '../shared/logger';
 
@@ -93,7 +92,7 @@ export class StreamingApp extends React.Component<{}, StreamingAppState> {
   }
 
   render() {
-    return <div className={styles.app} >{
+    return <div>{
       this.state.screen === 'viewfinder' ?
         <ViewfinderScreen updateState={this.updateState} {...this.state} />
       : this.state.screen === 'permission' ?

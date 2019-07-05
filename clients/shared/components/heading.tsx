@@ -9,5 +9,5 @@ export const Heading = (props: {
   children: React.ReactNode,
 }) => {
   const heading = `h${props.w || 1}`
-  return React.createElement(heading, { className: `${(styles as IndexedCss)[heading]} ${styles.heading} ${props.className}` }, props.children)
+  return React.createElement(heading, { className: `${props.className} ${(styles as IndexedCss)[heading]} ${styles.heading}` }, props.children)
 }
