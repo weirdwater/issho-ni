@@ -1,12 +1,31 @@
+// Thresholds chosen based on where the layout breaks
+@mixin mobile {
+  @media screen and (max-width: 840px) {
+    @content;
+  }
+}
+
+@mixin extra-wide {
+  @media screen and (min-width: 1745px) {
+    @content;
+  }
+}
 
 .container {
   margin-top: 50px;
   display: grid;
   grid-template-columns: 20px [fringe-left] 100px [content-start] 1fr [center] 1fr [content-end] 100px [fringe-right] 20px;
 
-  @media screen and (min-width: 1745px) {
+  @include extra-wide {
     & {
       grid-template-columns: 20px [fringe-left] 1fr [content-start] 752px [center] 752px [content-end] 1fr [fringe-right] 20px;
+    }
+  }
+
+  @include mobile {
+    & {
+      grid-template-columns: 20px [fringe-left content-start] 1fr [content-end fringe-right] 20px;
+      margin-top: 0;
     }
   }
 
@@ -22,6 +41,14 @@
   align-self: stretch;
   object-fit: none;
   object-position: right;
+
+  @include mobile {
+    grid-column: 1 / -1;
+    grid-row: 1 / 2;
+    object-fit: scale-down;
+    object-position: center;
+    height: calc(100vw*.7);
+  }
 }
 
 .streamer {
@@ -30,6 +57,13 @@
   justify-self: stretch;
   object-fit: scale-down;
   object-position: 25% 0;
+
+  @include mobile {
+    grid-column: content-start / content-end;
+    grid-row: 4 / span 1;
+    object-position: top center;
+    min-width: 0;
+  }
 }
 
 .theSitch {
@@ -39,6 +73,12 @@
   display: flex;
   flex-direction: column;
   justify-content: center;
+
+  @include mobile {
+    grid-column: content-start / content-end;
+    grid-row: 2 / span 1;
+    padding: 0;
+  }
 }
 
 .noHassle {
@@ -47,6 +87,12 @@
   padding: 0 35px 0 35px;
   display: flex;
   flex-direction: column;
+
+  @include mobile {
+    grid-column: content-start / content-end;
+    grid-row: 3 / span 1;
+    padding: 0;
+  }
 }
 
 .callToAction {
@@ -60,4 +106,10 @@
   background-color: #540F62;
   border-radius: 5px;
   z-index: 0;
+
+  @include mobile {
+    grid-column: 1 / -1;
+    grid-row: 1 / span 5;
+    border-radius: none;
+  }
 }
