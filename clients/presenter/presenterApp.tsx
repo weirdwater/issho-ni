@@ -289,7 +289,7 @@ export class PresenterApp extends React.Component<PresenterAppProps, PresenterAp
 
       <div className={styles.background} >
         <Heading w={1} className={styles.title} >Use code <Highlight>{this.state.session.v.activeSession.token}</Highlight></Heading>
-        <Heading w={2} className={styles.subheading} >to join at issho.app/live</Heading>
+        <Heading w={2} className={styles.subheading} >Join at www.issho.app/live</Heading>
       </div>
 
       <div className={styles.videos} >
