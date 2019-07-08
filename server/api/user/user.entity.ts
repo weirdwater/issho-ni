@@ -1,6 +1,7 @@
 import { Session } from '../session/session.entity'
 import { PrimaryGeneratedColumn, Column, OneToMany, Entity } from 'typeorm'
 import { Exclude } from 'class-transformer'
+import { Song } from '../song/song.entity';
 
 @Entity()
 export class User {
@@ -28,4 +29,7 @@ export class User {
 
   @OneToMany(type => Session, session => session.owner)
   sessions: Session[]
+
+  @OneToMany(type => Song, s => s.owner)
+  songs: Song[]
 }

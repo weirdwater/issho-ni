@@ -48,3 +48,22 @@ interface ConceptSongStatus {
   song: number
   lyric: number
 }
+
+interface Song {
+  title: string
+  artist: string
+  components: SongComponent[]
+}
+
+interface LyricComponent {
+  kind: 'lyrics'
+  name: string
+  lines: string[]
+}
+
+interface ReferenceComponent {
+  kind: 'reference'
+  component: SongComponent
+}
+
+type SongComponent = LyricComponent | ReferenceComponent
