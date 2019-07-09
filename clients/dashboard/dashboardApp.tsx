@@ -20,9 +20,8 @@ import {
 } from '../../shared/fun'
 import { Input } from './components/input';
 import * as auth from './authenticationApi';
-import { SelfUserDTO, SessionDTO, UsersSessionDTO } from '../../shared/dto';
+import { SelfUserDTO, UsersSessionDTO } from '../../shared/dto';
 import { sessionApi } from './sessionApi';
-import { toFormattedJSON } from '../shared/helpers';
 
 export interface LoginState {
   screen: 'login'
@@ -167,7 +166,7 @@ export class DashboardApp extends React.Component<DashboardAppProps, DashboardAp
         <p>Oops: {this.state.sessions.m}</p>
         :
         <ul>
-          { this.state.sessions.v.map(session => <li>
+          { this.state.sessions.v.map(session => <li key={session.id}>
             <span>{session.title}</span>
             { session.activeSession && <a href={`/present?session=${session.id}&key=${session.key}`} >presenter</a> }
           </li>) }
