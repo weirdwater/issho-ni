@@ -1,25 +1,44 @@
 import * as React from 'react'
 import { Heading } from '../shared/components/heading'
 import { info, capture } from '../shared/logger'
-import { Async, Maybe, none, pristine, isPristine, isNone, loading, loaded, error, Action, isError } from '../../shared/fun'
+import {
+  Async,
+  Maybe,
+  none,
+  pristine,
+  isPristine,
+  isNone,
+  loading,
+  loaded,
+  error,
+  Action,
+  isError,
+  isSome,
+  AsyncLoaded,
+  isLoaded,
+} from '../../shared/fun'
 import { Input } from './components/input';
-import { authenticateUser } from './authenticationApi';
+import * as auth from './authenticationApi';
+import { SelfUserDTO } from '../../shared/dto';
 
 export interface LoginState {
   screen: 'login'
   email: Maybe<string>
   password: Maybe<string>
   sessionToken: Async<string>
+  user: Async<SelfUserDTO>
 }
 
 export interface SessionScreenState {
   screen: 'sessions',
-  sessionToken: string
+  sessionToken: AsyncLoaded<string>,
+  user: AsyncLoaded<SelfUserDTO>,
 }
 
 export interface SongsScreenState {
   screen: 'songs',
-  sessionToken: string
+  sessionToken: AsyncLoaded<string>
+  user: AsyncLoaded<SelfUserDTO>,
 }
 
 export type DashboardAppState = LoginState | SessionScreenState | SongsScreenState
@@ -41,8 +60,16 @@ export class DashboardApp extends React.Component<DashboardAppProps, DashboardAp
       password: none(),
       email: none(),
       sessionToken: pristine(),
+      user: pristine(),
     }
     this.submitLogin = this.submitLogin.bind(this)
+  }
+
+  componentDidMount() {
+    const token = auth.loadSessionToken()
+    if (isSome(token)) {
+      this.setState(s => ({...s, sessionToken: loaded(token.v)}))
+    }
   }
 
   submitLogin() {
@@ -50,7 +77,7 @@ export class DashboardApp extends React.Component<DashboardAppProps, DashboardAp
       return
     }
     this.setState(s => ({...s, sessionToken: loading()}))
-    authenticateUser(this.state.email.v, this.state.password.v)
+    auth.authenticateUser(this.state.email.v, this.state.password.v)
       .then(token => {
         this.setState(s => ({...s, sessionToken: loaded(token)}))
       })
@@ -58,6 +85,25 @@ export class DashboardApp extends React.Component<DashboardAppProps, DashboardAp
         capture(e)
         this.setState(s => ({...s, sessionToken: error(e.message)}))
       })
+  }
+
+  componentDidUpdate(_: DashboardAppProps, prevState: DashboardAppState) {
+    if (this.state.screen === 'login' && isLoaded(this.state.sessionToken) && !isLoaded(prevState.sessionToken)) {
+      this.setState(s => ({...s, user: loading()}))
+      auth.getSelf(this.state.sessionToken.v)
+        .then(u => this.setState(s => ({...s, user: loaded(u)})))
+        .catch(e => {
+           this.setState(s => ({
+             ...s,
+             sessionToken: error('Unable to resume session, please try logging in again.'),
+             user: error('Unable to resume session, please try logging in again.'),
+            }))
+        })
+    }
+
+    if (this.state.screen === 'login' && isLoaded(this.state.sessionToken) && isLoaded(this.state.user) && !isLoaded(prevState.user)) {
+      this.setState(s => ({...s, screen: 'sessions' }))
+    }
   }
 
   render() {

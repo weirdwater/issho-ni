@@ -1,12 +1,16 @@
-import { Some } from '../../shared/fun'
-import { AuthenticateUserDTO } from '../../shared/dto';
-import { baseHeaders } from '../shared/headers';
+import { Some, Maybe, none, some } from '../../shared/fun'
+import { AuthenticateUserDTO, SelfUserDTO } from '../../shared/dto';
+import { baseHeaders, authenticatedHeaders } from '../shared/headers';
 import { ApiException } from '../shared/apiExceptions';
 import { UnauthorizedException } from '../shared/apiExceptions/unauthorizedException';
 import * as Cookie from 'js-cookie';
-import { capture } from '../shared/logger';
 
 const sessionTokenCookie = 'user_session_token'
+
+export const loadSessionToken = (): Maybe<string> => {
+  const token = Cookie.get(sessionTokenCookie)
+  return token !== undefined ? some(token) : none()
+}
 
 export const authenticateUser = async (email: string, password: string): Promise<string> => {
   const dto: AuthenticateUserDTO = { email, password }
@@ -40,4 +44,20 @@ export const authenticateUser = async (email: string, password: string): Promise
   Cookie.set(sessionTokenCookie, token)
 
   return token
+}
+
+export const getSelf = async (token: string): Promise<SelfUserDTO> => {
+  const res = await fetch('/api/user/me', {
+    headers: authenticatedHeaders(token),
+  })
+
+  if (res.status === 401) {
+    throw new UnauthorizedException('Session token not authorized')
+  }
+
+  if (!res.ok) {
+    throw new ApiException(`Something went wrong fetching the current user: ${res.statusText}`)
+  }
+
+  return res.json()
 }

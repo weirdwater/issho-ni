@@ -1,10 +1,22 @@
-import { Controller, Get, Param, Post, Body, UseInterceptors, ClassSerializerInterceptor, UseGuards, UsePipes, ValidationPipe } from '@nestjs/common'
+import { Controller,
+  Get,
+  Param,
+  Post,
+  Body,
+  UseInterceptors,
+  ClassSerializerInterceptor,
+  UseGuards,
+  UsePipes,
+  ValidationPipe,
+  ForbiddenException,
+} from '@nestjs/common'
 import { User } from './user.entity'
 import { UserService } from './user.service'
-import { CreateUserDTO } from '../../../shared/dto'
+import { CreateUserDTO, SelfUserDTO } from '../../../shared/dto'
 import * as bcrypt from 'bcrypt'
 import { NotFoundInterceptor } from '../not-found.interceptor';
 import { AuthGuard } from '@nestjs/passport';
+import { Consumer, isClient } from '../auth/auth.helpers';
 
 @Controller('api/user')
 @UseInterceptors(ClassSerializerInterceptor)
@@ -16,6 +28,16 @@ export class UserController {
   @UseGuards(AuthGuard())
   findAll(): Promise<User[]> {
     return this.userService.findAll()
+  }
+
+  @Get('me')
+  @UseGuards(AuthGuard())
+  self(@Consumer() consumer: Consumer): SelfUserDTO {
+    if (isClient(consumer)) {
+      throw new ForbiddenException()
+    }
+    const { id, email, name } = consumer.v
+    return { id, email, name }
   }
 
   @Get(':id')
