@@ -93,6 +93,7 @@ export class DashboardApp extends React.Component<DashboardAppProps, DashboardAp
       auth.getSelf(this.state.sessionToken.v)
         .then(u => this.setState(s => ({...s, user: loaded(u)})))
         .catch(e => {
+           auth.clearSessionToken()
            this.setState(s => ({
              ...s,
              sessionToken: error('Unable to resume session, please try logging in again.'),

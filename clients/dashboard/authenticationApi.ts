@@ -12,6 +12,10 @@ export const loadSessionToken = (): Maybe<string> => {
   return token !== undefined ? some(token) : none()
 }
 
+export const clearSessionToken = (): void => {
+  Cookie.remove(sessionTokenCookie)
+}
+
 export const authenticateUser = async (email: string, password: string): Promise<string> => {
   const dto: AuthenticateUserDTO = { email, password }
 
