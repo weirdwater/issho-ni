@@ -14,6 +14,7 @@ import { AuthModule } from '../auth/auth.module';
     TypeOrmModule.forFeature([ActiveSession]),
     AuthModule,
   ],
+  exports: [ SessionService ],
   controllers: [ SessionController ],
   providers: [ SessionService ],
 })

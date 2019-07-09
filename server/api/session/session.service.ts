@@ -23,6 +23,10 @@ export class SessionService {
     return this.sessionRepository.findOne(s, { relations: ['activeSession', 'owner', 'clients', 'presenter']})
   }
 
+  getByIds(ids: string[]) {
+    return this.sessionRepository.findByIds(ids, { relations: ['activeSession', 'clients', 'presenter'] })
+  }
+
   save(session: Session): Promise<Session> {
     return this.sessionRepository.save(session)
   }

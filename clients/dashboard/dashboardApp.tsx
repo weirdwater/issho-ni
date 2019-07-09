@@ -16,10 +16,13 @@ import {
   isSome,
   AsyncLoaded,
   isLoaded,
+  isLoading,
 } from '../../shared/fun'
 import { Input } from './components/input';
 import * as auth from './authenticationApi';
-import { SelfUserDTO } from '../../shared/dto';
+import { SelfUserDTO, SessionDTO, UsersSessionDTO } from '../../shared/dto';
+import { sessionApi } from './sessionApi';
+import { toFormattedJSON } from '../shared/helpers';
 
 export interface LoginState {
   screen: 'login'
@@ -33,6 +36,7 @@ export interface SessionScreenState {
   screen: 'sessions',
   sessionToken: AsyncLoaded<string>,
   user: AsyncLoaded<SelfUserDTO>,
+  sessions: Async<UsersSessionDTO[]>
 }
 
 export interface SongsScreenState {
@@ -105,7 +109,19 @@ export class DashboardApp extends React.Component<DashboardAppProps, DashboardAp
     }
 
     if (this.state.screen === 'login' && isLoaded(this.state.sessionToken) && isLoaded(this.state.user) && !isLoaded(prevState.user)) {
-      this.setState(s => ({...s, screen: 'sessions' }))
+      this.setState(s => ({...s, screen: 'sessions', sessions: pristine() }))
+    }
+
+    if (this.state.screen === 'sessions' && prevState.screen !== 'sessions') {
+      this.setState(s => ({...s, sessions: loading()}))
+      sessionApi(this.state.sessionToken.v, this.state.user.v).getAll()
+        .then(sessions => {
+          this.setState(s => ({...s, sessions: loaded(sessions)}))
+        })
+        .catch(e => {
+          this.setState(s => ({...s, sessions: error(e.message)}))
+          capture(e)
+        })
     }
   }
 
@@ -140,7 +156,22 @@ export class DashboardApp extends React.Component<DashboardAppProps, DashboardAp
         <button onClick={() => info('would sign out if implemented')} >Sign Out</button>
       </nav>
       { this.state.screen === 'sessions' ? <main>
-        <Heading>Sessions</Heading>
+        <Heading>
+          Sessions
+        </Heading>
+        { isPristine(this.state.sessions) ?
+        <p>Initializing</p>
+        : isLoading(this.state.sessions) ?
+        <p>Loading...</p>
+        : isError(this.state.sessions) ?
+        <p>Oops: {this.state.sessions.m}</p>
+        :
+        <ul>
+          { this.state.sessions.v.map(session => <li>
+            <span>{session.title}</span>
+            { session.activeSession && <a href={`/present?session=${session.id}&key=${session.key}`} >presenter</a> }
+          </li>) }
+        </ul>}
       </main> : <main>
         <Heading>Songs</Heading>
       </main>}

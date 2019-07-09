@@ -10,13 +10,14 @@ import {
   UseInterceptors,
   NotFoundException,
   Put,
+  Query,
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import * as crypto from 'crypto';
-import { Consumer, isUser } from '../auth/auth.helpers';
+import { Consumer, isUser, isClient } from '../auth/auth.helpers';
 import { NotFoundInterceptor } from '../not-found.interceptor';
 import { User } from '../user/user.entity';
-import { CreateSessionDTO, SessionDTO, HostSessionDTO } from '../../../shared/dto';
+import { CreateSessionDTO, SessionDTO, HostSessionDTO, UsersSessionDTO } from '../../../shared/dto';
 import { Session } from './session.entity';
 import { SessionService } from './session.service';
 import { SessionNotActiveException } from '../../exceptions/sessionNotActive.exception';

@@ -9,20 +9,25 @@ import { Controller,
   UsePipes,
   ValidationPipe,
   ForbiddenException,
+  Session,
 } from '@nestjs/common'
 import { User } from './user.entity'
 import { UserService } from './user.service'
-import { CreateUserDTO, SelfUserDTO } from '../../../shared/dto'
+import { CreateUserDTO, SelfUserDTO, UsersSessionDTO } from '../../../shared/dto'
 import * as bcrypt from 'bcrypt'
-import { NotFoundInterceptor } from '../not-found.interceptor';
-import { AuthGuard } from '@nestjs/passport';
-import { Consumer, isClient } from '../auth/auth.helpers';
+import { NotFoundInterceptor } from '../not-found.interceptor'
+import { AuthGuard } from '@nestjs/passport'
+import { Consumer, isClient } from '../auth/auth.helpers'
+import { SessionService } from '../session/session.service'
 
 @Controller('api/user')
 @UseInterceptors(ClassSerializerInterceptor)
 export class UserController {
 
-  constructor(private readonly userService: UserService) {}
+  constructor(
+    private readonly userService: UserService,
+    private readonly sessionService: SessionService,
+  ) {}
 
   @Get()
   @UseGuards(AuthGuard())
@@ -45,6 +50,16 @@ export class UserController {
   @UseInterceptors(NotFoundInterceptor)
   findOne(@Param('id') id: number): Promise<User> {
     return this.userService.findOne(id)
+  }
+
+  @Get('me/sessions')
+  @UseGuards(AuthGuard())
+  async findforUser(@Consumer() consumer: Consumer): Promise<UsersSessionDTO[]> {
+    if (isClient(consumer)) {
+      throw new ForbiddenException()
+    }
+    const fullUser = await this.userService.findOne(consumer.v.id)
+    return this.sessionService.getByIds(fullUser.sessions.map(s => s.id))
   }
 
   @Post()
