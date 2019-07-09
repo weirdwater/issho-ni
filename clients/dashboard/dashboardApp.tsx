@@ -59,7 +59,7 @@ export class DashboardApp extends React.Component<DashboardAppProps, DashboardAp
       screen: 'login',
       password: none(),
       email: none(),
-      sessionToken: pristine(),
+      sessionToken: loading(),
       user: pristine(),
     }
     this.submitLogin = this.submitLogin.bind(this)
@@ -69,6 +69,8 @@ export class DashboardApp extends React.Component<DashboardAppProps, DashboardAp
     const token = auth.loadSessionToken()
     if (isSome(token)) {
       this.setState(s => ({...s, sessionToken: loaded(token.v)}))
+    } else {
+      this.setState(s => ({...s, sessionToken: pristine()}))
     }
   }
 
