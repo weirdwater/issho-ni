@@ -21,7 +21,6 @@ import { Consumer, isClient } from '../auth/auth.helpers'
 import { SessionService } from '../session/session.service'
 
 @Controller('api/user')
-@UseInterceptors(ClassSerializerInterceptor)
 export class UserController {
 
   constructor(
@@ -31,6 +30,7 @@ export class UserController {
 
   @Get()
   @UseGuards(AuthGuard())
+  @UseInterceptors(ClassSerializerInterceptor)
   findAll(): Promise<User[]> {
     return this.userService.findAll()
   }
@@ -47,6 +47,7 @@ export class UserController {
 
   @Get(':id')
   @UseGuards(AuthGuard())
+  @UseInterceptors(ClassSerializerInterceptor)
   @UseInterceptors(NotFoundInterceptor)
   findOne(@Param('id') id: number): Promise<User> {
     return this.userService.findOne(id)
@@ -64,6 +65,7 @@ export class UserController {
 
   @Post()
   @UsePipes(ValidationPipe)
+  @UseInterceptors(ClassSerializerInterceptor)
   async create(@Body() userDTO: CreateUserDTO): Promise<User> {
 
     const user = new User()
