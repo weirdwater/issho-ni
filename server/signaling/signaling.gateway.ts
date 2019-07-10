@@ -1,15 +1,15 @@
-import { OnGatewayConnection, OnGatewayDisconnect, SubscribeMessage, WebSocketGateway, WebSocketServer, WsException } from '@nestjs/websockets';
-import { DescriptorDTO, CandidateDTO, SourceDTO } from '../../shared/dto';
-import { Server, Socket } from 'socket.io';
-import { isNone } from '../../shared/fun';
-import { isClient, isUser } from '../api/auth/auth.helpers';
-import { AuthService } from '../api/auth/auth.service';
-import { ClientService } from '../api/client/client.service';
-import { AuthSocket, makeRoom, roomFromConsumer, sessionTokenFromSocket, presenterRoom } from './signaling.helper';
-import { RavenInterceptor } from 'nest-raven';
-import { UseInterceptors, UseGuards } from '@nestjs/common';
-import { SocketGuard } from './socket.guard';
-import { SessionService } from 'server/api/session/session.service';
+import { OnGatewayConnection, OnGatewayDisconnect, SubscribeMessage, WebSocketGateway, WebSocketServer, WsException } from '@nestjs/websockets'
+import { DescriptorDTO, CandidateDTO, SourceDTO } from '../../shared/dto'
+import { Server, Socket } from 'socket.io'
+import { isNone } from '../../shared/fun'
+import { isClient, isUser } from '../api/auth/auth.helpers'
+import { AuthService } from '../api/auth/auth.service'
+import { ClientService } from '../api/client/client.service'
+import { AuthSocket, roomFromConsumer, sessionTokenFromSocket, presenterRoom } from './signaling.helper'
+import { RavenInterceptor } from 'nest-raven'
+import { UseInterceptors, UseGuards } from '@nestjs/common'
+import { SocketGuard } from './socket.guard'
+import { SessionService } from '../api/session/session.service'
 
 @WebSocketGateway()
 @UseInterceptors(new RavenInterceptor({

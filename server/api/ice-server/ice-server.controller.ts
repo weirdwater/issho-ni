@@ -1,9 +1,9 @@
-import { Controller, Get, UseGuards, NotFoundException } from '@nestjs/common';
-import { AuthGuard } from '@nestjs/passport';
-import { servers } from './ice-servers';
-import { IceServer } from './ice-server';
-import { ConfigService } from 'server/config/config.service';
-import { isNone } from 'shared/fun';
+import { Controller, Get, UseGuards, NotFoundException } from '@nestjs/common'
+import { AuthGuard } from '@nestjs/passport'
+import { servers } from './ice-servers'
+import { IceServer } from './ice-server'
+import { ConfigService } from '../../config/config.service'
+import { isNone } from '../../../shared/fun'
 
 @Controller('api/ice-server')
 export class IceServerController {
