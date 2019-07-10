@@ -1,11 +1,11 @@
-import { ClientCredentials } from './types'
+import freeice from 'freeice';
 import { SessionDTO } from '../../shared/dto';
-import { NoSessionTokenSetException, ApiException, ActiveSessionNotFoundException } from './apiExceptions';
 import { isNone } from '../../shared/fun';
+import { ActiveSessionNotFoundException, ApiException, NoSessionTokenSetException } from './apiExceptions';
 import { authenticatedHeaders } from './headers';
+import { ClientCredentials } from './types';
 
 export const sessionApi = (c: ClientCredentials) => {
-
   return {
     joinSession: async (token: string): Promise<SessionDTO> => {
       if (isNone(c.sessionToken)) {
@@ -42,6 +42,24 @@ export const sessionApi = (c: ClientCredentials) => {
       const dto: SessionDTO = await res.json()
 
       return dto
+    },
+    getIceServers: async (): Promise<RTCIceServer[]> => {
+      if (isNone(c.sessionToken)) {
+        throw new NoSessionTokenSetException(`Cannot fetch ice servers without authentication.`)
+      }
+      const res = await fetch('api/ice-server', {
+        headers: authenticatedHeaders(c.sessionToken.v),
+      })
+
+      if (res.status === 404) {
+        return freeice()
+      }
+
+      if (!res.ok) {
+        throw new ApiException(res.statusText)
+      }
+
+      return res.json()
     },
   }
 

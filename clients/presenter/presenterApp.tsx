@@ -31,10 +31,12 @@ import { SocketState } from '../streaming-client/types';
 import { StreamVideo } from './components/streamVideo';
 import * as styles from './presenterApp.scss';
 import freeice from 'freeice';
+import { updateIceServers } from '../shared/helpers';
 
 export interface PresenterAppState {
   credentials: Maybe<ClientCredentials>
   session: Async<SessionDTO>
+  iceServers: Async<RTCIceServer[]>
   socket: SocketState
   descriptors: Array<SourceDTO<DescriptorDTO>>
   candidates: Array<SourceDTO<CandidateDTO>>
@@ -82,6 +84,7 @@ export class PresenterApp extends React.Component<PresenterAppProps, PresenterAp
     this.state = {
       credentials: none(),
       session: pristine(),
+      iceServers: pristine(),
       socket: 'disconnected',
       descriptors: [],
       candidates: [],
@@ -108,7 +111,8 @@ export class PresenterApp extends React.Component<PresenterAppProps, PresenterAp
 
   peerConnectionInit(clientId: string) {
     return new Promise((resolve, reject) => {
-      const pc = new RTCPeerConnection({ iceServers: freeice() })
+      const iceServers = isLoaded(this.state.iceServers) ? this.state.iceServers.v : []
+      const pc = new RTCPeerConnection({ iceServers })
       pc.onicecandidate = this.sendCandidate(clientId)
       pc.onnegotiationneeded = async () => {
         info('negotiation needed')
@@ -197,6 +201,10 @@ export class PresenterApp extends React.Component<PresenterAppProps, PresenterAp
 
   componentDidUpdate(prevProps: {}, prevState: PresenterAppState) {
     this.authHandler.onUpdate(prevState.credentials, this.state.credentials)
+
+    if (isSome(this.state.credentials) && isNone(prevState.credentials)) {
+      updateIceServers(this.updateState, this.state.credentials)
+    }
 
     this.state.peers.filter((p, id) => !equals(p, prevState.peers.get(id)))
     .forEach((p, id) => {

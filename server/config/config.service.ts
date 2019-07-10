@@ -3,7 +3,7 @@ import * as Joi from 'joi';
 import * as fs from 'fs';
 import { Injectable } from '@nestjs/common'
 import { getEnv } from './config.helpers'
-import { isNone, doEither } from '../../shared/fun'
+import { isNone, doEither, none, Maybe, some } from '../../shared/fun'
 
 export interface EnvConfig {
   [key: string]: string;
@@ -29,6 +29,8 @@ export class ConfigService {
       ORM_SYNC: Joi.bool().default(false),
       SENTRY_DSN: Joi.string().required(),
       SENTRY_RELEASE: Joi.string().default(doEither(getEnv('SENTRY_RELEASE'))<string>(_ => 'unreleased', r => r)),
+      TURN_USERNAME: Joi.string(),
+      TURN_CREDENTIAL: Joi.string(),
     });
 
     const { error, value: validatedEnvConfig } = Joi.validate(
@@ -71,6 +73,14 @@ export class ConfigService {
 
   get sentryRelease(): string {
     return String(this.envConfig.SENTRY_RELEASE)
+  }
+
+  get turnUsername(): Maybe<string> {
+    return this.envConfig.TURN_USERNAME ? some(this.envConfig.TURN_USERNAME) : none()
+  }
+
+  get turnCredential(): Maybe<string> {
+    return this.envConfig.TURN_CREDENTIAL ? some(this.envConfig.TURN_CREDENTIAL) : none()
   }
 
 }

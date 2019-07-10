@@ -1,6 +1,21 @@
 import * as React from 'react';
 import { SessionDTO } from '../../shared/dto';
-import { Action, Async, AsyncLoaded, isLoaded, isLoading, isPristine, isSome, Maybe, none, pristine, Some } from '../../shared/fun';
+import {
+  Action,
+  Async,
+  AsyncLoaded,
+  isLoaded,
+  isLoading,
+  isPristine,
+  isSome,
+  Maybe,
+  none,
+  pristine,
+  Some,
+  isNone,
+  loading,
+  loaded,
+} from '../../shared/fun';
 import { ClientAuthenticationHandler } from '../shared/clientAuthenticationHandler';
 import { ClientCredentials, PeerConnectionState } from '../shared/types';
 import { joinSession } from './apiHandler';
@@ -9,12 +24,15 @@ import { PermissionScreen } from './screens/permissionScreen';
 import { ViewfinderScreen } from './screens/viewfinderScreen';
 import { PermissionState } from './types';
 import { capture } from '../shared/logger';
+import { sessionApi } from '../shared/sessionApi';
+import { updateIceServers } from '../shared/helpers';
 
 export interface EntryScreenState {
   screen: 'entry',
   sessionToken: Maybe<string>
   session: Async<SessionDTO>
   credentials: Maybe<ClientCredentials>
+  iceServers: Async<RTCIceServer[]>
 }
 
 export interface PermissionScreenState {
@@ -22,11 +40,13 @@ export interface PermissionScreenState {
   session: AsyncLoaded<SessionDTO>
   credentials: Some<ClientCredentials>
   permission: PermissionState
+  iceServers: AsyncLoaded<RTCIceServer[]>
 }
 
 export interface ViewfinderScreenState {
   screen: 'viewfinder'
   session: AsyncLoaded<SessionDTO>
+  iceServers: AsyncLoaded<RTCIceServer[]>
   credentials: Some<ClientCredentials>
   availableDevices: Maybe<MediaDeviceInfo[]>
   currentDeviceId: Maybe<string>
@@ -41,6 +61,7 @@ export const initialViewfinderState = (s: PermissionScreenState): ViewfinderScre
   screen: 'viewfinder',
   credentials: s.credentials,
   session: s.session,
+  iceServers: s.iceServers,
   availableDevices: none(),
   currentDeviceId: none(),
   stream: none(),
@@ -59,6 +80,7 @@ export class StreamingApp extends React.Component<{}, StreamingAppState> {
       sessionToken: none(),
       credentials: none(),
       session: pristine(),
+      iceServers: pristine(),
     }
 
     this.updateState = this.updateState.bind(this)
@@ -81,11 +103,16 @@ export class StreamingApp extends React.Component<{}, StreamingAppState> {
       joinSession(this.state).then(this.updateState)
     }
 
+    if (isSome(this.state.credentials) && isNone(prevState.credentials)) {
+      updateIceServers(this.updateState, this.state.credentials)
+    }
+
     if (isLoaded(this.state.session) && isLoading(prevState.session)) {
-      this.updateState(s => s.screen === 'entry' && isSome(s.credentials) && isLoaded(s.session) ? {
+      this.updateState(s => s.screen === 'entry' && isSome(s.credentials) && isLoaded(s.session) && isLoaded(s.iceServers) ? {
         screen: 'permission',
         permission: 'loading',
         session: s.session,
+        iceServers: s.iceServers,
         credentials: s.credentials,
       } : s)
     }
