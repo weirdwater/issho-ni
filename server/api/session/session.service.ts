@@ -4,6 +4,7 @@ import { Session } from './session.entity';
 import { Repository, Connection } from 'typeorm';
 import * as crypto from 'crypto'
 import { ActiveSession } from './activeSession.entity';
+import { Client } from '../client/client.entity';
 
 @Injectable()
 export class SessionService {
@@ -77,6 +78,18 @@ export class SessionService {
     }
 
     return activeSession
+  }
+
+  async removeClientFromSession(id: string, client: Client) {
+    const session = await this.sessionRepository.findOne({ id }, { relations: ['presenter', 'clients'] })
+
+    if (client.kind === 'presenter' && session.presenter && session.presenter.id === client.id) {
+      session.presenter = null
+    } else {
+      session.clients = session.clients.filter(s => s.id !== client.id)
+    }
+
+    this.sessionRepository.save(session)
   }
 
 }
