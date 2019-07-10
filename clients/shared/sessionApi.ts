@@ -4,6 +4,7 @@ import { isNone } from '../../shared/fun';
 import { ActiveSessionNotFoundException, ApiException, NoSessionTokenSetException } from './apiExceptions';
 import { authenticatedHeaders } from './headers';
 import { ClientCredentials } from './types';
+import { SessionAlreadyHasHostException } from './apiExceptions/sessionAlreadyHasHostException';
 
 export const sessionApi = (c: ClientCredentials) => {
   return {
@@ -24,17 +25,20 @@ export const sessionApi = (c: ClientCredentials) => {
 
       return dto
     },
-    hostSession: async (id: string, key: string): Promise<SessionDTO> => {
+    hostSession: async (id: string, key: string, force: boolean): Promise<SessionDTO> => {
       if (isNone(c.sessionToken)) {
         throw new NoSessionTokenSetException(`Cannot host session with id ${id}`)
       }
       const res = await fetch(`/api/session/${id}/host`, {
         method: 'PUT',
         headers: authenticatedHeaders(c.sessionToken.v),
-        body: JSON.stringify({ key }),
+        body: JSON.stringify({ key, force }),
       })
       if (res.status === 404) {
         throw new ActiveSessionNotFoundException(`Session ${id} with key not found`)
+      }
+      if (res.status === 409) {
+        throw new SessionAlreadyHasHostException('Session already has host')
       }
       if (!res.ok) {
         throw new ApiException(`Something went wrong hosting the session with id ${id}: ${res.status} ${res.statusText}`)

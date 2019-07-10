@@ -11,6 +11,7 @@ import {
   NotFoundException,
   Put,
   Query,
+  ConflictException,
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import * as crypto from 'crypto';
@@ -87,6 +88,10 @@ export class SessionController {
 
     if (session.activeSession === undefined) {
       throw new SessionNotActiveException()
+    }
+
+    if (session.presenter && !dto.force) {
+      throw new ConflictException('Session already has a host')
     }
 
     session.presenter = consumer.v
