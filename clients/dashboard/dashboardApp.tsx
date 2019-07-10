@@ -168,7 +168,7 @@ export class DashboardApp extends React.Component<DashboardAppProps, DashboardAp
         <ul>
           { this.state.sessions.v.map(session => <li key={session.id}>
             <span>{session.title}</span>
-            { session.activeSession && <a href={`/present?session=${session.id}&key=${session.key}`} >presenter</a> }
+            { session.activeSession && <a href={`/present?session=${session.id}&key=${session.key}`} target='_blank' >presenter</a> }
           </li>) }
         </ul>}
       </main> : <main>
