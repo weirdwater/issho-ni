@@ -31,15 +31,19 @@ import { SocketState } from '../streaming-client/types';
 import { StreamVideo } from './components/streamVideo';
 import * as styles from './presenterApp.scss';
 import freeice from 'freeice';
+import { updateIceServers } from '../shared/helpers';
+import { Button } from '../shared/components/button';
 
 export interface PresenterAppState {
   credentials: Maybe<ClientCredentials>
   session: Async<SessionDTO>
+  iceServers: Async<RTCIceServer[]>
   socket: SocketState
   descriptors: Array<SourceDTO<DescriptorDTO>>
   candidates: Array<SourceDTO<CandidateDTO>>
   streams: Map<string, MediaStream>
   peers: Map<string, PeerConnectionState>
+  overrideHost: boolean
 }
 
 export interface PresenterAppProps {
@@ -82,11 +86,13 @@ export class PresenterApp extends React.Component<PresenterAppProps, PresenterAp
     this.state = {
       credentials: none(),
       session: pristine(),
+      iceServers: pristine(),
       socket: 'disconnected',
       descriptors: [],
       candidates: [],
       streams: Map(),
       peers: Map(),
+      overrideHost: false,
     }
 
     this.updateState = this.updateState.bind(this)
@@ -108,7 +114,8 @@ export class PresenterApp extends React.Component<PresenterAppProps, PresenterAp
 
   peerConnectionInit(clientId: string) {
     return new Promise((resolve, reject) => {
-      const pc = new RTCPeerConnection({ iceServers: freeice() })
+      const iceServers = isLoaded(this.state.iceServers) ? this.state.iceServers.v : []
+      const pc = new RTCPeerConnection({ iceServers })
       pc.onicecandidate = this.sendCandidate(clientId)
       pc.onnegotiationneeded = async () => {
         info('negotiation needed')
@@ -198,6 +205,10 @@ export class PresenterApp extends React.Component<PresenterAppProps, PresenterAp
   componentDidUpdate(prevProps: {}, prevState: PresenterAppState) {
     this.authHandler.onUpdate(prevState.credentials, this.state.credentials)
 
+    if (isSome(this.state.credentials) && isNone(prevState.credentials)) {
+      updateIceServers(this.updateState, this.state.credentials)
+    }
+
     this.state.peers.filter((p, id) => !equals(p, prevState.peers.get(id)))
     .forEach((p, id) => {
       if (p.iceConnectionState === 'closed'
@@ -213,7 +224,11 @@ export class PresenterApp extends React.Component<PresenterAppProps, PresenterAp
     && isSome(this.state.credentials) && isSome(this.state.credentials.v.sessionToken)
     && (isNone(prevState.credentials) || isNone(prevState.credentials.v.sessionToken))) {
       this.updateState(s => ({...s, session: loading()}))
-      sessionApi(this.state.credentials.v).hostSession(this.props.sessionId.v, this.props.sessionKey.v)
+    }
+
+    if (isLoading(this.state.session) && !isLoading(prevState.session) && isSome(this.state.credentials)
+    && isSome(this.props.sessionId) && isSome(this.props.sessionKey)) {
+      sessionApi(this.state.credentials.v).hostSession(this.props.sessionId.v, this.props.sessionKey.v, this.state.overrideHost)
         .then(dto => this.updateState(s => ({...s, session: loaded(dto)})))
         .catch(e => this.updateState(s => ({...s, session: error(e.message)})))
     }
@@ -269,6 +284,18 @@ export class PresenterApp extends React.Component<PresenterAppProps, PresenterAp
 
         <div className={styles.background} >
           <Heading w={1} className={styles.title} ><Highlight>Loading...</Highlight></Heading>
+        </div>
+
+      </section>)
+    }
+
+    if (isError(this.state.session) && this.state.session.m === 'Session already has host') {
+      return (<section className={styles.container} >
+
+        <div className={styles.background} >
+          <Heading w={1} className={styles.title} >Session alreay being hosted</Heading>
+          <Heading w={2} className={styles.subheading} >Click continue if you want to resume the session on this screen.</Heading>
+          <Button label='Continue' onClick={() => this.setState(s => ({...s, session: loading(), overrideHost: true})) } />
         </div>
 
       </section>)

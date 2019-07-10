@@ -9,6 +9,7 @@ import { AuthSocket, makeRoom, roomFromConsumer, sessionTokenFromSocket, present
 import { RavenInterceptor } from 'nest-raven';
 import { UseInterceptors, UseGuards } from '@nestjs/common';
 import { SocketGuard } from './socket.guard';
+import { SessionService } from 'server/api/session/session.service';
 
 @WebSocketGateway()
 @UseInterceptors(new RavenInterceptor({
@@ -21,6 +22,7 @@ export class SignalingGateway implements OnGatewayConnection, OnGatewayDisconnec
   constructor(
     private readonly authService: AuthService,
     private readonly clientService: ClientService,
+    private readonly sessionService: SessionService,
   ) {}
 
   async handleConnection(socket: Socket) {
@@ -58,6 +60,11 @@ export class SignalingGateway implements OnGatewayConnection, OnGatewayDisconnec
       if (isClient(consumer)) {
         consumer.v.socket = null
         this.clientService.save(consumer.v)
+
+        const { session } = socket.handshake.query
+        if (session) {
+          this.sessionService.removeClientFromSession(session, consumer.v)
+        }
       }
     }
   }
