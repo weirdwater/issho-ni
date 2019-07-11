@@ -2,7 +2,7 @@ import * as React from 'react';
 import { SessionDTO, CandidateDTO, SourceDTO, DescriptorDTO } from '../../../shared/dto';
 import { Action, AsyncLoaded, isNone, isSome, Maybe, none, some, Some } from '../../../shared/fun';
 import { capture, info } from '../../shared/logger';
-import { emitCandidate, emitDescriptor, signalingSocket } from '../../shared/signaling';
+import { emitCandidate, emitDescriptor, openSocket, closeSocket } from '../../shared/signaling';
 import { UnsupportedSDPTypeException } from '../../shared/socketExceptions/UnsupportedSDPTypeException';
 import { ClientCredentials, PeerConnectionState, StateUpdater } from '../../shared/types';
 import { Page } from '../components/page';
@@ -118,7 +118,11 @@ export class ViewfinderScreen extends React.Component<ViewfinderScreenProps, {}>
 
   initSocketConnection() {
     if (isSome(this.props.credentials.v.sessionToken)) {
-      this.socket = signalingSocket<ViewfinderScreenState>(this.props.credentials.v, this.props.session.v.id, this.updateViewState)
+      this.socket = openSocket<ViewfinderScreenState>(
+        this.props.credentials.v.sessionToken,
+        this.updateViewState,
+        { session: this.props.session.v.id },
+      )
 
       this.socket.on('descriptor', async (dto: SourceDTO<DescriptorDTO>) => {
         info('descriptor received', dto)
@@ -154,9 +158,8 @@ export class ViewfinderScreen extends React.Component<ViewfinderScreenProps, {}>
   }
 
   componentWillUnmount() {
-    this.socket.close()
     this.peerConnection.close()
-    this.updateViewState(s => ({ ...s, socket: 'disconnected' }))
+    closeSocket(this.socket, this.updateViewState)
   }
 
   componentDidUpdate(prevProps: ViewfinderScreenProps) {

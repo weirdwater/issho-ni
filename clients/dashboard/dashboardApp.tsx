@@ -17,11 +17,15 @@ import {
   AsyncLoaded,
   isLoaded,
   isLoading,
+  some,
 } from '../../shared/fun'
 import { Input } from './components/input';
 import * as auth from './authenticationApi';
 import { SelfUserDTO, UsersSessionDTO } from '../../shared/dto';
 import { sessionApi } from './sessionApi';
+import { SocketState } from '../streaming-client/types';
+import { openSocket, closeSocket } from '../shared/signaling';
+import { Map } from 'immutable'
 
 export interface LoginState {
   screen: 'login'
@@ -29,19 +33,23 @@ export interface LoginState {
   password: Maybe<string>
   sessionToken: Async<string>
   user: Async<SelfUserDTO>
+  socket: SocketState
 }
 
 export interface SessionScreenState {
-  screen: 'sessions',
-  sessionToken: AsyncLoaded<string>,
-  user: AsyncLoaded<SelfUserDTO>,
+  screen: 'sessions'
+  sessionToken: AsyncLoaded<string>
+  user: AsyncLoaded<SelfUserDTO>
   sessions: Async<UsersSessionDTO[]>
+  socket: SocketState
+  lastLyrics: Map<string, string>
 }
 
 export interface SongsScreenState {
-  screen: 'songs',
+  screen: 'songs'
   sessionToken: AsyncLoaded<string>
-  user: AsyncLoaded<SelfUserDTO>,
+  user: AsyncLoaded<SelfUserDTO>
+  socket: SocketState
 }
 
 export type DashboardAppState = LoginState | SessionScreenState | SongsScreenState
@@ -55,6 +63,7 @@ const updateLoginField = (a: Action<LoginState>): Action<DashboardAppState> =>
   s => s.screen === 'login' && (isPristine(s.sessionToken) || isError(s.sessionToken)) ? { ...a(s), sessionToken: pristine() } : s
 
 export class DashboardApp extends React.Component<DashboardAppProps, DashboardAppState> {
+  private socket: SocketIOClient.Socket
 
   constructor(props: DashboardAppProps) {
     super(props)
@@ -64,8 +73,14 @@ export class DashboardApp extends React.Component<DashboardAppProps, DashboardAp
       email: none(),
       sessionToken: loading(),
       user: pristine(),
+      socket: 'disconnected',
     }
     this.submitLogin = this.submitLogin.bind(this)
+    this.updateState = this.updateState.bind(this)
+  }
+
+  updateState(a: Action<DashboardAppState>, callback?: () => void) {
+    this.setState(s => a(s), callback)
   }
 
   componentDidMount() {
@@ -75,6 +90,10 @@ export class DashboardApp extends React.Component<DashboardAppProps, DashboardAp
     } else {
       this.setState(s => ({...s, sessionToken: pristine()}))
     }
+  }
+
+  componentWillUnmount() {
+    closeSocket(this.socket, this.updateState)
   }
 
   submitLogin() {
@@ -108,7 +127,15 @@ export class DashboardApp extends React.Component<DashboardAppProps, DashboardAp
     }
 
     if (this.state.screen === 'login' && isLoaded(this.state.sessionToken) && isLoaded(this.state.user) && !isLoaded(prevState.user)) {
-      this.setState(s => ({...s, screen: 'sessions', sessions: pristine() }))
+      this.setState(s => ({...s, screen: 'sessions', sessions: pristine(), lastLyrics: Map() }))
+      this.socket = openSocket(some(this.state.sessionToken.v), this.updateState)
+      this.socket.on('lyric', (l: {sessionId: string, line: string }) => {
+        if (l.line === '') {
+          this.setState(s => s.screen === 'sessions' ? {...s, lastLyrics: s.lastLyrics.delete(l.sessionId)} : s)
+        } else {
+          this.setState(s => s.screen === 'sessions' ? {...s, lastLyrics: s.lastLyrics.set(l.sessionId, l.line)} : s)
+        }
+      })
     }
 
     if (this.state.screen === 'sessions' && prevState.screen !== 'sessions') {
@@ -167,8 +194,10 @@ export class DashboardApp extends React.Component<DashboardAppProps, DashboardAp
         :
         <ul>
           { this.state.sessions.v.map(session => <li key={session.id}>
-            <span>{session.title}</span>
+            <p>{session.title}</p>
             { session.activeSession && <a href={`/present?session=${session.id}&key=${session.key}`} target='_blank' >presenter</a> }
+            { session.activeSession && <button onClick={() => this.socket.emit('start-lyrics', { sessionId: session.id })} >play</button> }
+            { this.state.screen === 'sessions' && this.state.lastLyrics.has(session.id) && <p>{this.state.lastLyrics.get(session.id)}</p> }
           </li>) }
         </ul>}
       </main> : <main>

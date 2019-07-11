@@ -23,7 +23,7 @@ import { Highlight } from '../shared/components/highlight';
 import { capture, info } from '../shared/logger';
 import { PeerConnectionMissingException } from '../shared/peerConnectionMissingException';
 import { sessionApi } from '../shared/sessionApi';
-import { emitCandidate, emitDescriptor, signalingSocket } from '../shared/signaling';
+import { emitCandidate, emitDescriptor, openSocket, closeSocket } from '../shared/signaling';
 import { UnsupportedSDPTypeException } from '../shared/socketExceptions/UnsupportedSDPTypeException';
 import { ClientCredentials, PeerConnectionState } from '../shared/types';
 import { LoadingPage } from '../streaming-client/screens/loadingPage';
@@ -235,10 +235,11 @@ export class PresenterApp extends React.Component<PresenterAppProps, PresenterAp
 
     if (isSome(this.state.credentials) && isSome(this.state.credentials.v.sessionToken)
     && isLoaded(this.state.session) && isLoading(prevState.session)) {
-      this.socket = signalingSocket<PresenterAppState>(
-        this.state.credentials.v,
-        this.state.session.v.id,
-        this.updateState)
+      this.socket = openSocket<PresenterAppState>(
+        this.state.credentials.v.sessionToken,
+        this.updateState,
+        { session: this.state.session.v.id },
+      )
       this.socket.on('descriptor', this.handleDescriptor)
       this.socket.on('candidate', this.handleCandidate)
     }
@@ -264,6 +265,11 @@ export class PresenterApp extends React.Component<PresenterAppProps, PresenterAp
     }
 
     this.updateState(s => ({...s, peers: s.peers.delete(clientId), streams: s.streams.delete(clientId) }))
+  }
+
+  componentWillUnmount() {
+    Object.values(this.peers).forEach(p => p.close())
+    closeSocket(this.socket, this.updateState)
   }
 
   render() {
