@@ -53,6 +53,7 @@ export interface ViewfinderScreenState {
   stream: Maybe<MediaStream>
   peerState: Maybe<PeerConnectionState>
   socket: 'disconnected' | 'connected'
+  lyrics: Maybe<string>
 }
 
 export type StreamingAppState = EntryScreenState | PermissionScreenState | ViewfinderScreenState
@@ -67,6 +68,7 @@ export const initialViewfinderState = (s: PermissionScreenState): ViewfinderScre
   stream: none(),
   peerState: none(),
   socket: 'disconnected',
+  lyrics: none(),
 })
 
 export class StreamingApp extends React.Component<{}, StreamingAppState> {

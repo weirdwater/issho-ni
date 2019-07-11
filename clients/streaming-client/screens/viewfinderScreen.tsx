@@ -2,7 +2,7 @@ import * as React from 'react';
 import { SessionDTO, CandidateDTO, SourceDTO, DescriptorDTO } from '../../../shared/dto';
 import { Action, AsyncLoaded, isNone, isSome, Maybe, none, some, Some } from '../../../shared/fun';
 import { capture, info } from '../../shared/logger';
-import { emitCandidate, emitDescriptor, signalingSocket } from '../../shared/signaling';
+import { emitCandidate, emitDescriptor, openSocket, closeSocket } from '../../shared/signaling';
 import { UnsupportedSDPTypeException } from '../../shared/socketExceptions/UnsupportedSDPTypeException';
 import { ClientCredentials, PeerConnectionState, StateUpdater } from '../../shared/types';
 import { Page } from '../components/page';
@@ -28,6 +28,7 @@ export interface ViewfinderScreenProps {
   session: AsyncLoaded<SessionDTO>
   credentials: Some<ClientCredentials>
   peerState: Maybe<PeerConnectionState>
+  lyrics: Maybe<string>
 }
 
 const DeviceOption = (props: { device: MediaDeviceInfo}) => (
@@ -118,7 +119,11 @@ export class ViewfinderScreen extends React.Component<ViewfinderScreenProps, {}>
 
   initSocketConnection() {
     if (isSome(this.props.credentials.v.sessionToken)) {
-      this.socket = signalingSocket<ViewfinderScreenState>(this.props.credentials.v, this.props.session.v.id, this.updateViewState)
+      this.socket = openSocket<ViewfinderScreenState>(
+        this.props.credentials.v.sessionToken,
+        this.updateViewState,
+        { session: this.props.session.v.id },
+      )
 
       this.socket.on('descriptor', async (dto: SourceDTO<DescriptorDTO>) => {
         info('descriptor received', dto)
@@ -138,6 +143,14 @@ export class ViewfinderScreen extends React.Component<ViewfinderScreenProps, {}>
         info('candidate received', candidate)
         this.peerConnection.addIceCandidate(candidate.data)
       })
+
+      this.socket.on('lyric', (l: {sessionId: string, line: string }) => {
+        if (l.line === '') {
+          this.updateViewState(s => ({...s, lyrics: none()}))
+        } else {
+          this.updateViewState(s => ({...s, lyrics: some(l.line)}))
+        }
+      })
     }
   }
 
@@ -154,9 +167,8 @@ export class ViewfinderScreen extends React.Component<ViewfinderScreenProps, {}>
   }
 
   componentWillUnmount() {
-    this.socket.close()
     this.peerConnection.close()
-    this.updateViewState(s => ({ ...s, socket: 'disconnected' }))
+    closeSocket(this.socket, this.updateViewState)
   }
 
   componentDidUpdate(prevProps: ViewfinderScreenProps) {
@@ -198,6 +210,9 @@ export class ViewfinderScreen extends React.Component<ViewfinderScreenProps, {}>
 
     return (
       <Page className={styles.container} >
+        { isSome(this.props.lyrics) && <div className={styles.lyrics} >
+          <p>{this.props.lyrics.v}</p>
+        </div> }
         <select value={isSome(this.props.currentDeviceId) ? this.props.currentDeviceId.v : undefined}
           className={styles.cameraSelector}
           onChange={e => {

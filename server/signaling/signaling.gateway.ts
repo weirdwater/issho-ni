@@ -5,11 +5,34 @@ import { isNone } from '../../shared/fun'
 import { isClient, isUser } from '../api/auth/auth.helpers'
 import { AuthService } from '../api/auth/auth.service'
 import { ClientService } from '../api/client/client.service'
-import { AuthSocket, roomFromConsumer, sessionTokenFromSocket, presenterRoom } from './signaling.helper'
+import { AuthSocket, roomFromConsumer, sessionTokenFromSocket, presenterRoom, makeRoom } from './signaling.helper'
 import { RavenInterceptor } from 'nest-raven'
 import { UseInterceptors, UseGuards } from '@nestjs/common'
 import { SocketGuard } from './socket.guard'
 import { SessionService } from '../api/session/session.service'
+import { UserService } from '../api/user/user.service';
+
+const testLyrics: Array<[string, number]> = [
+  ['Dit is een lyric test.', 2000],
+  ['De lyrics die nu verschijnen...', 2000],
+  ['zijn hardcoded in de server.', 2500],
+  ['Maar worden wel per socket naar...', 2500],
+  ['alle verbonden clients gestuurd.', 2500],
+  ['', 0],
+]
+
+const emitLyrics = (server: Server, sessionId: string, allLyrics: Array<[string, number]>, onFinish: () => void) => {
+  const rec = (lyrics: Array<[string, number]>) => {
+    if (lyrics.length < 1) {
+      return onFinish()
+    }
+    const [ lyric, ...rest ] = lyrics
+    server.to(makeRoom('source')(sessionId)).emit('lyric', {sessionId, line: lyric[0] })
+    server.to(makeRoom('user')(sessionId)).emit('lyric', {sessionId, line: lyric[0] })
+    setTimeout(() => rec(rest), lyric[1])
+  }
+  return rec(allLyrics)
+}
 
 @WebSocketGateway()
 @UseInterceptors(new RavenInterceptor({
@@ -17,12 +40,14 @@ import { SessionService } from '../api/session/session.service'
 } as any))
 export class SignalingGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @WebSocketServer()
-  server: Server;
+  private server: Server;
+  private activeLyrics: string[] = []
 
   constructor(
     private readonly authService: AuthService,
     private readonly clientService: ClientService,
     private readonly sessionService: SessionService,
+    private readonly userService: UserService,
   ) {}
 
   async handleConnection(socket: Socket) {
@@ -51,6 +76,11 @@ export class SignalingGateway implements OnGatewayConnection, OnGatewayDisconnec
     if (session) {
       const room = roomFromConsumer(consumer.v)(session)
       socket.join(room)
+    }
+
+    if (isUser(consumer.v)) {
+      const user = await this.userService.findOne(consumer.v.v.id)
+      user.sessions.forEach(s => socket.join(makeRoom('user')(s.id)))
     }
   }
 
@@ -95,6 +125,19 @@ export class SignalingGateway implements OnGatewayConnection, OnGatewayDisconnec
       throw new WsException(`No socket found for the client with id ${data.target}`)
     }
     socket.to(room).emit('candidate', data)
+  }
+
+  @SubscribeMessage('start-lyrics')
+  @UseGuards(SocketGuard)
+  async startLyrics(socket: AuthSocket, data: { sessionId: string }): Promise<void> {
+    if (isClient(socket.consumer)) {
+      throw new WsException('Forbidden')
+    }
+    if (this.activeLyrics.find(id => id === data.sessionId)) {
+      return
+    }
+    this.activeLyrics.push(data.sessionId)
+    emitLyrics(this.server, data.sessionId, testLyrics, () => this.activeLyrics = this.activeLyrics.filter(id => id !== data.sessionId))
   }
 
 }
