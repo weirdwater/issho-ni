@@ -26,3 +26,21 @@
   align-self: end;
   z-index: 2;
 }
+
+.lyrics {
+  grid-column: 1 / -1;
+  grid-row: 1 / -1;
+  z-index: 3;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  align-items: center;
+
+  p {
+    font-size: 5vw;
+    font-weight: 400;
+    margin-bottom: 10vh;
+    color: white;
+    text-shadow: -1px 0 black, 0 1px black, 1px 0 black, 0 -1px black;
+  }
+}

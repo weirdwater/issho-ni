@@ -28,6 +28,7 @@ export interface ViewfinderScreenProps {
   session: AsyncLoaded<SessionDTO>
   credentials: Some<ClientCredentials>
   peerState: Maybe<PeerConnectionState>
+  lyrics: Maybe<string>
 }
 
 const DeviceOption = (props: { device: MediaDeviceInfo}) => (
@@ -142,6 +143,14 @@ export class ViewfinderScreen extends React.Component<ViewfinderScreenProps, {}>
         info('candidate received', candidate)
         this.peerConnection.addIceCandidate(candidate.data)
       })
+
+      this.socket.on('lyric', (l: {sessionId: string, line: string }) => {
+        if (l.line === '') {
+          this.updateViewState(s => ({...s, lyrics: none()}))
+        } else {
+          this.updateViewState(s => ({...s, lyrics: some(l.line)}))
+        }
+      })
     }
   }
 
@@ -201,6 +210,9 @@ export class ViewfinderScreen extends React.Component<ViewfinderScreenProps, {}>
 
     return (
       <Page className={styles.container} >
+        { isSome(this.props.lyrics) && <div className={styles.lyrics} >
+          <p>{this.props.lyrics.v}</p>
+        </div> }
         <select value={isSome(this.props.currentDeviceId) ? this.props.currentDeviceId.v : undefined}
           className={styles.cameraSelector}
           onChange={e => {
