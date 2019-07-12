@@ -105,7 +105,8 @@ export class StreamingApp extends React.Component<{}, StreamingAppState> {
       joinSession(this.state).then(this.updateState)
     }
 
-    if (isSome(this.state.credentials) && isNone(prevState.credentials)) {
+    if (isSome(this.state.credentials) && isSome(this.state.credentials.v.sessionToken)
+    && isSome(prevState.credentials) && isNone(prevState.credentials.v.sessionToken)) {
       updateIceServers(this.updateState, this.state.credentials)
     }
 
