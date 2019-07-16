@@ -1,0 +1,31 @@
+:root {
+  --hot-pink: #FF00CE;
+  --dark-purple: #420D4D;
+  color: var(--dark-purple);
+  font-family: 'Lato', sans-serif;
+  font-size: 20px;
+  font-weight: 300;
+}
+
+.container {
+  display: grid;
+  height: 100vh;
+  width: 100vw;
+  grid-template-columns: 300px 1fr;
+}
+
+.menu {
+  display: grid;
+  grid-template-rows: [header-start] 120px [header-end body-start] 1fr [body-end footer-start] 60px [footer-end];
+  border-right: 3px solid var(--dark-purple);
+}
+
+.menuHeader {
+  display: flex;
+  justify-content: center;
+  justify-items: flex-start;
+}
+
+.content {
+  overflow: auto;
+}

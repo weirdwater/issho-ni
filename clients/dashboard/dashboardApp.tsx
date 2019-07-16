@@ -26,6 +26,7 @@ import { sessionApi } from './sessionApi';
 import { SocketState } from '../streaming-client/types';
 import { openSocket, closeSocket } from '../shared/signaling';
 import { Map } from 'immutable'
+import * as styles from './dashboardApp.scss'
 
 export interface LoginState {
   screen: 'login'
@@ -172,16 +173,18 @@ export class DashboardApp extends React.Component<DashboardAppProps, DashboardAp
       )
     }
 
-    return (<div>
-      <nav>
-        <Heading>Issho Ni</Heading>
+    return (<div className={styles.container} >
+      <nav className={styles.menu} >
+        <header className={styles.menuHeader} >
+          <Heading>Issho Ni</Heading>
+        </header>
         <ul>
           <li>Sessions</li>
           <li>Songs</li>
         </ul>
         <button onClick={() => info('would sign out if implemented')} >Sign Out</button>
       </nav>
-      { this.state.screen === 'sessions' ? <main>
+      { this.state.screen === 'sessions' ? <main className={styles.content} >
         <Heading>
           Sessions
         </Heading>
